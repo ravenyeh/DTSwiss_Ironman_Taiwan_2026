@@ -203,7 +203,185 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
         observer.observe(el);
     });
+
+    // Weekly Mileage Chart
+    initWeeklyMileageChart();
 });
+
+// Initialize Weekly Mileage Chart
+function initWeeklyMileageChart() {
+    const ctx = document.getElementById('weeklyMileageChart');
+    if (!ctx) return;
+
+    // Calculate weekly totals
+    const weeklyData = {};
+    trainingData.forEach(day => {
+        const week = day.week;
+        if (!weeklyData[week]) {
+            weeklyData[week] = { swim: 0, bike: 0, run: 0 };
+        }
+        weeklyData[week].swim += parseFloat(day.swim) || 0;
+        weeklyData[week].bike += parseFloat(day.bike) || 0;
+        weeklyData[week].run += parseFloat(day.run) || 0;
+    });
+
+    // Convert to arrays
+    const weeks = Object.keys(weeklyData).sort((a, b) => {
+        const numA = parseInt(a.replace('Week ', ''));
+        const numB = parseInt(b.replace('Week ', ''));
+        return numA - numB;
+    });
+
+    const swimData = weeks.map(w => weeklyData[w].swim.toFixed(1));
+    const bikeData = weeks.map(w => weeklyData[w].bike.toFixed(0));
+    const runData = weeks.map(w => weeklyData[w].run.toFixed(1));
+    const labels = weeks.map(w => w.replace('Week ', 'W'));
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: '游泳 (km)',
+                    data: swimData,
+                    borderColor: '#0077be',
+                    backgroundColor: 'rgba(0, 119, 190, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    yAxisID: 'y1',
+                    pointBackgroundColor: '#0077be',
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                },
+                {
+                    label: '自行車 (km)',
+                    data: bikeData,
+                    borderColor: '#f5a623',
+                    backgroundColor: 'rgba(245, 166, 35, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    yAxisID: 'y',
+                    pointBackgroundColor: '#f5a623',
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                },
+                {
+                    label: '跑步 (km)',
+                    data: runData,
+                    borderColor: '#4caf50',
+                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.3,
+                    yAxisID: 'y',
+                    pointBackgroundColor: '#4caf50',
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: {
+                            size: 14,
+                            family: "'Noto Sans TC', sans-serif"
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(26, 26, 26, 0.9)',
+                    titleFont: {
+                        size: 14,
+                        family: "'Noto Sans TC', sans-serif"
+                    },
+                    bodyFont: {
+                        size: 13,
+                        family: "'Noto Sans TC', sans-serif"
+                    },
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y + ' km';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 12,
+                            family: "'Noto Sans TC', sans-serif"
+                        }
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: '自行車 / 跑步 (km)',
+                        font: {
+                            size: 13,
+                            family: "'Noto Sans TC', sans-serif"
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        }
+                    },
+                    min: 0
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: '游泳 (km)',
+                        color: '#0077be',
+                        font: {
+                            size: 13,
+                            family: "'Noto Sans TC', sans-serif"
+                        }
+                    },
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        color: '#0077be',
+                        font: {
+                            size: 12
+                        }
+                    },
+                    min: 0
+                }
+            }
+        }
+    });
+}
 
 // Countdown to race day
 function updateCountdown() {

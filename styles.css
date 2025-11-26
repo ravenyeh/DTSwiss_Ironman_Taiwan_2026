@@ -664,6 +664,38 @@ body {
     color: var(--primary-color);
 }
 
+/* Weekly Mileage Chart */
+.weekly-chart-container {
+    margin-top: 50px;
+    padding: 30px;
+    background: var(--white);
+    border-radius: var(--border-radius);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+}
+
+.weekly-chart-container h3 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 25px;
+    color: var(--secondary-color);
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 400px;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .chart-wrapper {
+        height: 300px;
+    }
+
+    .weekly-chart-container {
+        padding: 20px 15px;
+    }
+}
+
 /* Daily Schedule */
 .daily-schedule {
     margin-top: 60px;

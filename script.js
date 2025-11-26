@@ -459,15 +459,15 @@ function displayTodayTraining() {
         }
     }
 
-    // If not in training period or no training found, show random
+    // If not in training period or no training found, show random from 建構期
     if (!training) {
         isRandom = true;
-        // Filter out rest days and get random training
-        const activeTrainings = trainingData.filter(d =>
-            d.intensity !== '休息' && (d.swim || d.bike || d.run)
+        // Filter to 建構期 only, exclude rest days
+        const buildPhaseTrainings = trainingData.filter(d =>
+            d.phase === '建構期' && d.intensity !== '休息' && (d.swim || d.bike || d.run)
         );
-        training = activeTrainings[Math.floor(Math.random() * activeTrainings.length)];
-        todayLabel.textContent = '訓練預覽';
+        training = buildPhaseTrainings[Math.floor(Math.random() * buildPhaseTrainings.length)];
+        todayLabel.textContent = '今日訓練預覽';
     }
 
     if (training) {

@@ -429,7 +429,7 @@ updateCountdown();
 setInterval(updateCountdown, 1000);
 
 // Convert training data to Garmin Workout JSON format
-function convertToGarminWorkout(training, index) {
+function convertToGarminWorkout(training, index, overrideDate = null) {
     const workouts = [];
 
     // Sport type mappings: 1=running, 2=cycling, 4=swimming (pool), 5=swimming (open water)
@@ -441,7 +441,8 @@ function convertToGarminWorkout(training, index) {
 
     // Parse workout content to extract details
     const content = training.content;
-    const dateObj = new Date(training.date);
+    // Use override date if provided, otherwise use training's original date
+    const dateObj = overrideDate ? new Date(overrideDate) : new Date(training.date);
     const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
 
     // Create swim workout if exists
@@ -799,15 +800,17 @@ function generateRunSteps(totalDistance, content) {
 }
 
 // Show workout modal
-function showWorkoutModal(dayIndex) {
-    console.log('showWorkoutModal called with index:', dayIndex);
+// overrideDate: if provided, the workouts will be scheduled for this date instead of training's original date
+function showWorkoutModal(dayIndex, overrideDate = null) {
+    console.log('showWorkoutModal called with index:', dayIndex, 'overrideDate:', overrideDate);
     window.currentWorkoutDayIndex = dayIndex;
+    window.currentWorkoutOverrideDate = overrideDate;
     const training = trainingData[dayIndex];
     if (!training) {
         console.error('Training not found for index:', dayIndex);
         return;
     }
-    const workouts = convertToGarminWorkout(training, dayIndex);
+    const workouts = convertToGarminWorkout(training, dayIndex, overrideDate);
 
     const modal = document.getElementById('workoutModal');
     const modalContent = document.getElementById('workoutModalContent');
@@ -816,6 +819,11 @@ function showWorkoutModal(dayIndex) {
         console.error('Modal elements not found');
         return;
     }
+
+    // Show scheduled date info (if override date is used)
+    const scheduledDateObj = overrideDate ? new Date(overrideDate) : new Date(training.date);
+    const scheduledDateStr = `${scheduledDateObj.getFullYear()}/${scheduledDateObj.getMonth() + 1}/${scheduledDateObj.getDate()}`;
+    const isOverride = overrideDate && overrideDate !== training.date;
 
     let html = `
         <div class="modal-header">
@@ -828,6 +836,7 @@ function showWorkoutModal(dayIndex) {
                 <span class="phase-badge phase-${training.phase}">${training.phase}</span>
                 <span class="intensity-badge intensity-${training.intensity}">${training.intensity}</span>
             </div>
+            ${isOverride ? `<div class="scheduled-date-notice">📅 匯入日期：<strong>${scheduledDateStr}</strong>（今日）</div>` : ''}
             <div class="training-description">${training.content}</div>
     `;
 
@@ -1080,7 +1089,9 @@ async function importWorkoutToGarmin(workoutData, scheduledDate) {
 // Import all workouts for a day to Garmin
 async function importAllToGarmin(dayIndex) {
     const training = trainingData[dayIndex];
-    const workouts = convertToGarminWorkout(training, dayIndex);
+    // Use override date if set (from today's training section)
+    const overrideDate = window.currentWorkoutOverrideDate;
+    const workouts = convertToGarminWorkout(training, dayIndex, overrideDate);
 
     if (workouts.length === 0) {
         updateGarminStatus('沒有訓練可匯入', true);
@@ -1142,6 +1153,7 @@ function displayTodayTraining() {
     const todayRun = document.getElementById('todayRun');
     const todayHours = document.getElementById('todayHours');
     const todayNote = document.getElementById('todayNote');
+    const todayActions = document.getElementById('todayActions');
 
     if (!todayLabel) return;
 
@@ -1150,6 +1162,7 @@ function displayTodayTraining() {
     const trainingEndDate = new Date('2026-04-12');
 
     let training = null;
+    let trainingIndex = -1;
     let isRandom = false;
 
     // Check if today is within training period
@@ -1161,12 +1174,13 @@ function displayTodayTraining() {
             day: 'numeric'
         });
 
-        training = trainingData.find(d => {
+        trainingIndex = trainingData.findIndex(d => {
             const trainingDate = new Date(d.date);
             return trainingDate.toDateString() === today.toDateString();
         });
 
-        if (training) {
+        if (trainingIndex >= 0) {
+            training = trainingData[trainingIndex];
             todayLabel.textContent = '今日訓練';
         }
     }
@@ -1178,7 +1192,10 @@ function displayTodayTraining() {
         const buildPhaseTrainings = trainingData.filter(d =>
             d.phase === '建構期' && d.intensity !== '休息' && (d.swim || d.bike || d.run)
         );
-        training = buildPhaseTrainings[Math.floor(Math.random() * buildPhaseTrainings.length)];
+        const randomTraining = buildPhaseTrainings[Math.floor(Math.random() * buildPhaseTrainings.length)];
+        training = randomTraining;
+        // Find the index in the original array
+        trainingIndex = trainingData.findIndex(d => d.date === randomTraining.date);
         todayLabel.textContent = '今日訓練預覽';
     }
 
@@ -1227,6 +1244,21 @@ function displayTodayTraining() {
             todayNote.style.display = 'block';
         } else {
             todayNote.style.display = 'none';
+        }
+
+        // Add view/import button if training has workouts
+        if (todayActions && trainingIndex >= 0 && (training.swim || training.bike || training.run)) {
+            // Format today's date as ISO string for override
+            const todayISO = today.toISOString().split('T')[0];
+            todayActions.innerHTML = `
+                <button class="btn-today-workout" onclick="showWorkoutModal(${trainingIndex}, '${todayISO}')">
+                    <span class="btn-icon">📋</span>
+                    查看訓練 / 匯入 Garmin
+                </button>
+            `;
+            todayActions.style.display = 'block';
+        } else if (todayActions) {
+            todayActions.style.display = 'none';
         }
     }
 }

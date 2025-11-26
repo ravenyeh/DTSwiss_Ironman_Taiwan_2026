@@ -151,74 +151,73 @@
     <!-- Training Schedule Section -->
     <section id="schedule" class="section schedule-section">
         <div class="container">
-            <h2 class="section-title">90天訓練規劃</h2>
+            <h2 class="section-title">週訓練量總覽</h2>
 
-            <!-- Training Phases -->
-            <div class="phases">
-                <div class="phase" data-phase="build">
-                    <div class="phase-icon">🏗️</div>
-                    <h3>建構期</h3>
-                    <span class="phase-weeks">Week 1-4</span>
-                    <p>重建訓練量，打好有氧基礎</p>
-                </div>
-                <div class="phase" data-phase="strengthen">
-                    <div class="phase-icon">💪</div>
-                    <h3>強化期</h3>
-                    <span class="phase-weeks">Week 5-9</span>
-                    <p>最大訓練量，專項能力突破</p>
-                </div>
-                <div class="phase" data-phase="peak">
-                    <div class="phase-icon">🔥</div>
-                    <h3>巔峰期</h3>
-                    <span class="phase-weeks">Week 10-11</span>
-                    <p>半程模擬賽，驗證策略</p>
-                </div>
-                <div class="phase" data-phase="taper">
-                    <div class="phase-icon">🎯</div>
-                    <h3>減量期</h3>
-                    <span class="phase-weeks">Week 12-13</span>
-                    <p>恢復能量，迎接比賽</p>
-                </div>
-            </div>
-
-            <!-- Weekly Summary -->
+            <!-- Weekly Summary with Integrated Phases -->
             <div class="weekly-summary">
-                <h3>週訓練量總覽</h3>
                 <div class="summary-cards">
-                    <div class="summary-card">
-                        <div class="card-header">Week 1-4</div>
+                    <div class="summary-card" data-phase="build">
+                        <div class="card-phase-header">
+                            <span class="phase-icon">🏗️</span>
+                            <div class="phase-info">
+                                <h4>建構期</h4>
+                                <span class="phase-weeks">Week 1-4</span>
+                            </div>
+                        </div>
+                        <p class="phase-description">重建訓練量，打好有氧基礎</p>
                         <div class="card-content">
                             <div class="card-stat"><span class="label">游泳</span><span class="value">8-10km</span></div>
                             <div class="card-stat"><span class="label">自行車</span><span class="value">250-300km</span></div>
                             <div class="card-stat"><span class="label">跑步</span><span class="value">40-50km</span></div>
-                            <div class="card-stat"><span class="label">總時數</span><span class="value">18-21h</span></div>
+                            <div class="card-stat total"><span class="label">總時數</span><span class="value">18-21h</span></div>
                         </div>
                     </div>
-                    <div class="summary-card featured">
-                        <div class="card-header">Week 5-9</div>
+                    <div class="summary-card featured" data-phase="strengthen">
+                        <div class="card-phase-header">
+                            <span class="phase-icon">💪</span>
+                            <div class="phase-info">
+                                <h4>強化期</h4>
+                                <span class="phase-weeks">Week 5-9</span>
+                            </div>
+                        </div>
+                        <p class="phase-description">最大訓練量，專項能力突破</p>
                         <div class="card-content">
                             <div class="card-stat"><span class="label">游泳</span><span class="value">12-14km</span></div>
                             <div class="card-stat"><span class="label">自行車</span><span class="value">350-400km</span></div>
                             <div class="card-stat"><span class="label">跑步</span><span class="value">55-60km</span></div>
-                            <div class="card-stat"><span class="label">總時數</span><span class="value">23-26h</span></div>
+                            <div class="card-stat total"><span class="label">總時數</span><span class="value">23-26h</span></div>
                         </div>
                     </div>
-                    <div class="summary-card">
-                        <div class="card-header">Week 10-11</div>
+                    <div class="summary-card" data-phase="peak">
+                        <div class="card-phase-header">
+                            <span class="phase-icon">🔥</span>
+                            <div class="phase-info">
+                                <h4>巔峰期</h4>
+                                <span class="phase-weeks">Week 10-11</span>
+                            </div>
+                        </div>
+                        <p class="phase-description">半程模擬賽，驗證策略</p>
                         <div class="card-content">
                             <div class="card-stat"><span class="label">游泳</span><span class="value">12-13km</span></div>
                             <div class="card-stat"><span class="label">自行車</span><span class="value">320-340km</span></div>
                             <div class="card-stat"><span class="label">跑步</span><span class="value">50-52km</span></div>
-                            <div class="card-stat"><span class="label">總時數</span><span class="value">21-22h</span></div>
+                            <div class="card-stat total"><span class="label">總時數</span><span class="value">21-22h</span></div>
                         </div>
                     </div>
-                    <div class="summary-card">
-                        <div class="card-header">Week 12-13</div>
+                    <div class="summary-card" data-phase="taper">
+                        <div class="card-phase-header">
+                            <span class="phase-icon">🎯</span>
+                            <div class="phase-info">
+                                <h4>減量期</h4>
+                                <span class="phase-weeks">Week 12-13</span>
+                            </div>
+                        </div>
+                        <p class="phase-description">恢復能量，迎接比賽</p>
                         <div class="card-content">
                             <div class="card-stat"><span class="label">游泳</span><span class="value">4-8km</span></div>
                             <div class="card-stat"><span class="label">自行車</span><span class="value">80-200km</span></div>
                             <div class="card-stat"><span class="label">跑步</span><span class="value">15-35km</span></div>
-                            <div class="card-stat"><span class="label">總時數</span><span class="value">6-13h</span></div>
+                            <div class="card-stat total"><span class="label">總時數</span><span class="value">6-13h</span></div>
                         </div>
                     </div>
                 </div>

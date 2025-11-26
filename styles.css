@@ -516,16 +516,70 @@ body {
     border-radius: var(--border-radius);
     overflow: hidden;
     transition: var(--transition);
+    padding: 24px;
 }
 
 .summary-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
 }
 
 .summary-card.featured {
     background: linear-gradient(135deg, var(--primary-color), #ff6b6b);
     color: var(--white);
+}
+
+/* Integrated Phase Header */
+.card-phase-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.card-phase-header .phase-icon {
+    font-size: 2rem;
+    margin-bottom: 0;
+}
+
+.phase-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.phase-info h4 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.phase-info .phase-weeks {
+    display: inline-block;
+    background: var(--primary-color);
+    color: var(--white);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    width: fit-content;
+}
+
+.summary-card.featured .phase-info .phase-weeks {
+    background: rgba(255,255,255,0.25);
+}
+
+.phase-description {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.summary-card.featured .phase-description {
+    color: rgba(255,255,255,0.85);
+    border-bottom-color: rgba(255,255,255,0.2);
 }
 
 .card-header {
@@ -539,7 +593,17 @@ body {
 }
 
 .card-content {
-    padding: 20px;
+    padding: 0;
+}
+
+.card-stat.total {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+.summary-card.featured .card-stat.total {
+    border-top-color: rgba(255,255,255,0.2);
 }
 
 .card-stat {

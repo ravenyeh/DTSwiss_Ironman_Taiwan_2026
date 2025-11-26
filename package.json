@@ -5,6 +5,7 @@
   "main": "index.html",
   "scripts": {
     "start": "npx serve .",
+    "dev": "vercel dev",
     "build": "echo 'Static site - no build required'"
   },
   "keywords": [
@@ -15,5 +16,8 @@
     "dt-swiss"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@flow-js/garmin-connect": "^1.0.3"
+  }
 }

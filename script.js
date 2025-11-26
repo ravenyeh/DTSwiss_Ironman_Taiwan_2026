@@ -801,6 +801,7 @@ function generateRunSteps(totalDistance, content) {
 // Show workout modal
 function showWorkoutModal(dayIndex) {
     console.log('showWorkoutModal called with index:', dayIndex);
+    window.currentWorkoutDayIndex = dayIndex;
     const training = trainingData[dayIndex];
     if (!training) {
         console.error('Training not found for index:', dayIndex);
@@ -863,9 +864,32 @@ function showWorkoutModal(dayIndex) {
         });
     }
 
+    // Garmin Connect section
+    const isLoggedIn = getGarminSession();
     html += `
+            <div class="garmin-section">
+                <h4>匯入 Garmin Connect</h4>
+                ${isLoggedIn ? `
+                    <div class="garmin-logged-in">
+                        <span class="garmin-user">✓ 已登入 Garmin Connect</span>
+                        <button class="btn-garmin-logout" onclick="garminLogout()">登出</button>
+                    </div>
+                    ${workouts.length > 0 ? `
+                        <button class="btn-garmin-import" onclick="importAllToGarmin(${dayIndex})">
+                            匯入全部訓練到 Garmin
+                        </button>
+                    ` : ''}
+                ` : `
+                    <div class="garmin-login-form" id="garminLoginForm">
+                        <input type="email" id="garminEmail" placeholder="Garmin Email" class="garmin-input">
+                        <input type="password" id="garminPassword" placeholder="密碼" class="garmin-input">
+                        <button class="btn-garmin-login" onclick="garminLogin()">登入 Garmin Connect</button>
+                        <p class="garmin-note">登入後可直接匯入訓練到 Garmin 行事曆</p>
+                    </div>
+                `}
+                <div id="garminStatus" class="garmin-status"></div>
+            </div>
             <div class="modal-footer">
-                <p class="import-note">💡 匯入 Garmin Connect：複製 JSON 後，可使用瀏覽器擴充功能或 API 工具匯入</p>
                 <button class="btn-close" onclick="closeWorkoutModal()">關閉</button>
             </div>
         </div>
@@ -912,6 +936,185 @@ function downloadWorkoutJson(idx, filename) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
+
+// ============================================
+// Garmin Connect Integration
+// ============================================
+
+const GARMIN_SESSION_KEY = 'garmin_session_id';
+
+// Get Garmin session from localStorage
+function getGarminSession() {
+    return localStorage.getItem(GARMIN_SESSION_KEY);
+}
+
+// Set Garmin session to localStorage
+function setGarminSession(sessionId) {
+    localStorage.setItem(GARMIN_SESSION_KEY, sessionId);
+}
+
+// Clear Garmin session
+function clearGarminSession() {
+    localStorage.removeItem(GARMIN_SESSION_KEY);
+}
+
+// Update Garmin status message
+function updateGarminStatus(message, isError = false) {
+    const statusEl = document.getElementById('garminStatus');
+    if (statusEl) {
+        statusEl.textContent = message;
+        statusEl.className = `garmin-status ${isError ? 'error' : 'success'}`;
+        statusEl.style.display = message ? 'block' : 'none';
+    }
+}
+
+// Login to Garmin Connect
+async function garminLogin() {
+    const email = document.getElementById('garminEmail')?.value;
+    const password = document.getElementById('garminPassword')?.value;
+
+    if (!email || !password) {
+        updateGarminStatus('請輸入 Email 和密碼', true);
+        return;
+    }
+
+    updateGarminStatus('登入中...', false);
+
+    try {
+        const response = await fetch('/api/garmin/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            setGarminSession(data.sessionId);
+            updateGarminStatus(`登入成功！歡迎 ${data.user.displayName}`, false);
+
+            // Refresh modal to show logged-in state
+            setTimeout(() => {
+                const currentIndex = window.currentWorkoutDayIndex;
+                if (currentIndex !== undefined) {
+                    showWorkoutModal(currentIndex);
+                }
+            }, 1000);
+        } else {
+            updateGarminStatus(data.error || '登入失敗', true);
+        }
+    } catch (error) {
+        console.error('Garmin login error:', error);
+        updateGarminStatus('連線錯誤，請稍後再試', true);
+    }
+}
+
+// Logout from Garmin Connect
+async function garminLogout() {
+    const sessionId = getGarminSession();
+
+    try {
+        await fetch('/api/garmin/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Session-Id': sessionId || ''
+            }
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+
+    clearGarminSession();
+    updateGarminStatus('已登出', false);
+
+    // Refresh modal
+    setTimeout(() => {
+        const currentIndex = window.currentWorkoutDayIndex;
+        if (currentIndex !== undefined) {
+            showWorkoutModal(currentIndex);
+        }
+    }, 500);
+}
+
+// Import single workout to Garmin
+async function importWorkoutToGarmin(workoutData, scheduledDate) {
+    const sessionId = getGarminSession();
+
+    if (!sessionId) {
+        updateGarminStatus('請先登入 Garmin Connect', true);
+        return false;
+    }
+
+    try {
+        const response = await fetch('/api/garmin/workout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Session-Id': sessionId
+            },
+            body: JSON.stringify({
+                workout: workoutData,
+                scheduledDate: scheduledDate
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            return true;
+        } else {
+            if (data.error.includes('過期') || data.error.includes('登入')) {
+                clearGarminSession();
+            }
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        console.error('Import workout error:', error);
+        throw error;
+    }
+}
+
+// Import all workouts for a day to Garmin
+async function importAllToGarmin(dayIndex) {
+    const training = trainingData[dayIndex];
+    const workouts = convertToGarminWorkout(training, dayIndex);
+
+    if (workouts.length === 0) {
+        updateGarminStatus('沒有訓練可匯入', true);
+        return;
+    }
+
+    updateGarminStatus(`匯入中... (0/${workouts.length})`, false);
+
+    let successCount = 0;
+    let errors = [];
+
+    for (let i = 0; i < workouts.length; i++) {
+        const workout = workouts[i];
+        updateGarminStatus(`匯入中... (${i + 1}/${workouts.length}) ${workout.data.workoutName}`, false);
+
+        try {
+            await importWorkoutToGarmin(workout.data, workout.data.scheduledDate);
+            successCount++;
+        } catch (error) {
+            errors.push(`${workout.data.workoutName}: ${error.message}`);
+        }
+    }
+
+    if (successCount === workouts.length) {
+        updateGarminStatus(`成功匯入 ${successCount} 個訓練到 Garmin Connect！`, false);
+    } else if (successCount > 0) {
+        updateGarminStatus(`部分成功：${successCount}/${workouts.length} 個訓練已匯入`, true);
+    } else {
+        updateGarminStatus(`匯入失敗：${errors[0]}`, true);
+    }
+}
+
+// Store current workout day index for modal refresh
+window.currentWorkoutDayIndex = undefined;
 
 // Close modal when clicking outside
 document.addEventListener('click', (e) => {

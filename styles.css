@@ -2333,3 +2333,168 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: #a1a1a1;
 }
+
+/* Garmin Connect Integration */
+.garmin-section {
+    margin-top: 25px;
+    padding: 20px;
+    background: linear-gradient(135deg, #007acc 0%, #005a99 100%);
+    border-radius: 12px;
+    color: var(--white);
+}
+
+.garmin-section h4 {
+    margin: 0 0 15px 0;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.garmin-section h4::before {
+    content: '⌚';
+    font-size: 1.2rem;
+}
+
+.garmin-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.garmin-input {
+    padding: 12px 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--text-color);
+}
+
+.garmin-input::placeholder {
+    color: #999;
+}
+
+.garmin-input:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.btn-garmin-login {
+    padding: 12px 20px;
+    background: var(--white);
+    color: #007acc;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-garmin-login:hover {
+    background: #f0f0f0;
+    transform: scale(1.02);
+}
+
+.garmin-note {
+    margin: 10px 0 0 0;
+    font-size: 0.85rem;
+    opacity: 0.9;
+    text-align: center;
+}
+
+.garmin-logged-in {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+}
+
+.garmin-user {
+    font-weight: 600;
+}
+
+.btn-garmin-logout {
+    padding: 6px 15px;
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--white);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-garmin-logout:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.btn-garmin-import {
+    width: 100%;
+    padding: 15px 20px;
+    background: var(--white);
+    color: #007acc;
+    border: none;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-garmin-import::before {
+    content: '📤';
+    font-size: 1.2rem;
+}
+
+.btn-garmin-import:hover {
+    background: #f0f0f0;
+    transform: scale(1.02);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+}
+
+.garmin-status {
+    margin-top: 15px;
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    text-align: center;
+    display: none;
+}
+
+.garmin-status.success {
+    background: rgba(76, 175, 80, 0.9);
+    color: var(--white);
+}
+
+.garmin-status.error {
+    background: rgba(244, 67, 54, 0.9);
+    color: var(--white);
+}
+
+/* Mobile Garmin Section */
+@media (max-width: 768px) {
+    .garmin-section {
+        padding: 15px;
+    }
+
+    .garmin-logged-in {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .btn-garmin-import {
+        padding: 12px 15px;
+        font-size: 1rem;
+    }
+}

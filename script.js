@@ -108,6 +108,9 @@ function populateSchedule(filter = 'all') {
     filteredData.forEach(item => {
         const row = document.createElement('tr');
 
+        // Find the original index in trainingData
+        const originalIndex = trainingData.findIndex(d => d.date === item.date);
+
         // Add classes for styling
         if (item.intensity === '休息') {
             row.classList.add('rest-day');
@@ -119,6 +122,9 @@ function populateSchedule(filter = 'all') {
             row.classList.add('holiday-row');
         }
 
+        // Determine if there are workouts (not a rest day)
+        const hasWorkout = item.swim || item.bike || item.run;
+
         row.innerHTML = `
             <td>${item.week}</td>
             <td>${formatDate(item.date)}</td>
@@ -129,6 +135,9 @@ function populateSchedule(filter = 'all') {
             <td>${item.bike ? item.bike + 'km' : '-'}</td>
             <td>${item.run ? item.run + 'km' : '-'}</td>
             <td>${item.hours}h</td>
+            <td>
+                ${hasWorkout ? `<button class="btn-view-workout" onclick="showWorkoutModal(${originalIndex})">查看訓練</button>` : '-'}
+            </td>
         `;
 
         tbody.appendChild(row);
@@ -418,6 +427,496 @@ function updateCountdown() {
 // Update countdown every second
 updateCountdown();
 setInterval(updateCountdown, 1000);
+
+// Convert training data to Garmin Workout JSON format
+function convertToGarminWorkout(training, index) {
+    const workouts = [];
+
+    // Sport type mappings: 1=running, 2=cycling, 4=swimming (pool), 5=swimming (open water)
+    const sportTypes = {
+        swim: { id: 4, name: 'POOL_SWIM' },
+        bike: { id: 2, name: 'CYCLING' },
+        run: { id: 1, name: 'RUNNING' }
+    };
+
+    // Parse workout content to extract details
+    const content = training.content;
+    const dateObj = new Date(training.date);
+    const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+
+    // Create swim workout if exists
+    if (training.swim && parseFloat(training.swim) > 0) {
+        const swimDistance = parseFloat(training.swim) * 1000; // Convert to meters
+        const swimWorkout = {
+            workoutId: null,
+            ownerId: null,
+            workoutName: `Day ${index + 1} 游泳 - ${training.phase}`,
+            description: extractWorkoutPart(content, '游泳'),
+            sportType: sportTypes.swim,
+            workoutSegments: [{
+                segmentOrder: 1,
+                sportType: sportTypes.swim,
+                workoutSteps: generateSwimSteps(swimDistance, content)
+            }],
+            estimatedDurationInSecs: Math.round(swimDistance * 2.5 / 100 * 60), // Estimate based on 2:30/100m
+            estimatedDistanceInMeters: swimDistance,
+            poolLength: 25,
+            poolLengthUnit: { unitId: 1, unitKey: 'meter' },
+            scheduledDate: dateStr
+        };
+        workouts.push({ type: 'swim', data: swimWorkout });
+    }
+
+    // Create bike workout if exists
+    if (training.bike && parseFloat(training.bike) > 0) {
+        const bikeDistance = parseFloat(training.bike) * 1000; // Convert to meters
+        const bikeWorkout = {
+            workoutId: null,
+            ownerId: null,
+            workoutName: `Day ${index + 1} 自行車 - ${training.phase}`,
+            description: extractWorkoutPart(content, '自行車'),
+            sportType: sportTypes.bike,
+            workoutSegments: [{
+                segmentOrder: 1,
+                sportType: sportTypes.bike,
+                workoutSteps: generateBikeSteps(bikeDistance, content)
+            }],
+            estimatedDurationInSecs: Math.round(bikeDistance / 1000 / 30 * 3600), // Estimate based on 30km/h
+            estimatedDistanceInMeters: bikeDistance,
+            scheduledDate: dateStr
+        };
+        workouts.push({ type: 'bike', data: bikeWorkout });
+    }
+
+    // Create run workout if exists
+    if (training.run && parseFloat(training.run) > 0) {
+        const runDistance = parseFloat(training.run) * 1000; // Convert to meters
+        const runWorkout = {
+            workoutId: null,
+            ownerId: null,
+            workoutName: `Day ${index + 1} 跑步 - ${training.phase}`,
+            description: extractWorkoutPart(content, '跑步'),
+            sportType: sportTypes.run,
+            workoutSegments: [{
+                segmentOrder: 1,
+                sportType: sportTypes.run,
+                workoutSteps: generateRunSteps(runDistance, content)
+            }],
+            estimatedDurationInSecs: Math.round(runDistance / 1000 * 6 * 60), // Estimate based on 6:00/km
+            estimatedDistanceInMeters: runDistance,
+            scheduledDate: dateStr
+        };
+        workouts.push({ type: 'run', data: runWorkout });
+    }
+
+    return workouts;
+}
+
+// Extract workout description for specific sport
+function extractWorkoutPart(content, sport) {
+    const parts = content.split('|').map(p => p.trim());
+    for (const part of parts) {
+        if (part.includes(sport)) {
+            return part;
+        }
+    }
+    return content;
+}
+
+// Generate swim workout steps
+function generateSwimSteps(totalDistance, content) {
+    const steps = [];
+    let stepOrder = 1;
+
+    // Check for intervals pattern like "6x400m" or "10x200m"
+    const intervalMatch = content.match(/(\d+)\s*[xX×]\s*(\d+)m/);
+
+    if (intervalMatch) {
+        const reps = parseInt(intervalMatch[1]);
+        const distance = parseInt(intervalMatch[2]);
+        const warmupDistance = Math.round((totalDistance - reps * distance) / 2);
+
+        // Warmup
+        if (warmupDistance > 0) {
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: warmupDistance,
+                targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+            });
+        }
+
+        // Interval repeat
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
+            numberOfIterations: reps,
+            workoutSteps: [
+                {
+                    stepOrder: 1,
+                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                    endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                    endConditionValue: distance,
+                    targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+                },
+                {
+                    stepOrder: 2,
+                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: 30,
+                    targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+                }
+            ]
+        });
+
+        // Cooldown
+        if (warmupDistance > 0) {
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: warmupDistance,
+                targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+            });
+        }
+    } else {
+        // Simple distance swim
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.2),
+            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.6),
+            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.2),
+            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+        });
+    }
+
+    return steps;
+}
+
+// Generate bike workout steps
+function generateBikeSteps(totalDistance, content) {
+    const steps = [];
+    let stepOrder = 1;
+
+    // Check for Sweet Spot intervals
+    const ssMatch = content.match(/(\d+)\s*[xX×]\s*(\d+)\s*分鐘.*Sweet\s*Spot/i);
+
+    if (ssMatch) {
+        const reps = parseInt(ssMatch[1]);
+        const minutes = parseInt(ssMatch[2]);
+
+        // Warmup - 20% of total
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.15),
+            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+        });
+
+        // Sweet Spot intervals
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
+            numberOfIterations: reps,
+            workoutSteps: [
+                {
+                    stepOrder: 1,
+                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: minutes * 60,
+                    targetType: { workoutTargetTypeId: 6, workoutTargetTypeKey: 'power.zone' },
+                    targetValueOne: 88,
+                    targetValueTwo: 94,
+                    zoneNumber: 4
+                },
+                {
+                    stepOrder: 2,
+                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: 300,
+                    targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+                }
+            ]
+        });
+
+        // Cooldown
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 1, conditionTypeKey: 'lap.button' },
+            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+        });
+    } else {
+        // Simple distance ride (Z2)
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.1),
+            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.8),
+            targetType: { workoutTargetTypeId: 4, workoutTargetTypeKey: 'heart.rate.zone' },
+            zoneNumber: 2
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.1),
+            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+        });
+    }
+
+    return steps;
+}
+
+// Generate run workout steps
+function generateRunSteps(totalDistance, content) {
+    const steps = [];
+    let stepOrder = 1;
+
+    // Check for interval pattern like "8x1km" or "6x1.2km"
+    const intervalMatch = content.match(/(\d+)\s*[xX×]\s*([\d.]+)\s*km/i);
+
+    if (intervalMatch) {
+        const reps = parseInt(intervalMatch[1]);
+        const distanceKm = parseFloat(intervalMatch[2]);
+        const intervalDistance = distanceKm * 1000;
+
+        // Warmup
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: 3000,
+            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+        });
+
+        // Intervals
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
+            numberOfIterations: reps,
+            workoutSteps: [
+                {
+                    stepOrder: 1,
+                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                    endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                    endConditionValue: intervalDistance,
+                    targetType: { workoutTargetTypeId: 2, workoutTargetTypeKey: 'pace.zone' },
+                    zoneNumber: 4
+                },
+                {
+                    stepOrder: 2,
+                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: 90,
+                    targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+                }
+            ]
+        });
+
+        // Cooldown
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: 2000,
+            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+        });
+    } else if (content.includes('節奏跑') || content.includes('T配速')) {
+        // Tempo run
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: 2000,
+            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: totalDistance - 4000,
+            targetType: { workoutTargetTypeId: 2, workoutTargetTypeKey: 'pace.zone' },
+            zoneNumber: 3
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: 2000,
+            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+        });
+    } else {
+        // Easy/long run
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.1),
+            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.8),
+            targetType: { workoutTargetTypeId: 4, workoutTargetTypeKey: 'heart.rate.zone' },
+            zoneNumber: 2
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.1),
+            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+        });
+    }
+
+    return steps;
+}
+
+// Show workout modal
+function showWorkoutModal(dayIndex) {
+    const training = trainingData[dayIndex];
+    const workouts = convertToGarminWorkout(training, dayIndex);
+
+    const modal = document.getElementById('workoutModal');
+    const modalContent = document.getElementById('workoutModalContent');
+
+    let html = `
+        <div class="modal-header">
+            <h3>Garmin 訓練計劃</h3>
+            <button class="modal-close" onclick="closeWorkoutModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="training-info">
+                <div class="training-date">${formatDate(training.date)}</div>
+                <span class="phase-badge phase-${training.phase}">${training.phase}</span>
+                <span class="intensity-badge intensity-${training.intensity}">${training.intensity}</span>
+            </div>
+            <div class="training-description">${training.content}</div>
+    `;
+
+    if (workouts.length === 0) {
+        html += `<div class="no-workout">此日無訓練內容</div>`;
+    } else {
+        workouts.forEach((workout, idx) => {
+            const typeLabel = { swim: '游泳', bike: '自行車', run: '跑步' }[workout.type];
+            const typeColor = { swim: 'var(--swim-color)', bike: 'var(--bike-color)', run: 'var(--run-color)' }[workout.type];
+
+            html += `
+                <div class="workout-section" style="border-left: 4px solid ${typeColor}">
+                    <div class="workout-header">
+                        <img src="images/${workout.type === 'swim' ? 'swim' : workout.type === 'bike' ? 'cycling' : 'run'}.png" class="workout-type-icon" alt="${typeLabel}">
+                        <span class="workout-type-label">${typeLabel}</span>
+                    </div>
+                    <div class="workout-name">${workout.data.workoutName}</div>
+                    <div class="workout-desc">${workout.data.description}</div>
+                    <div class="workout-stats">
+                        <span>距離: ${(workout.data.estimatedDistanceInMeters / 1000).toFixed(1)} km</span>
+                        <span>預估時間: ${Math.round(workout.data.estimatedDurationInSecs / 60)} 分鐘</span>
+                    </div>
+                    <details class="workout-json-details">
+                        <summary>查看 JSON</summary>
+                        <textarea class="workout-json" id="workout-json-${idx}" rows="12">${JSON.stringify(workout.data, null, 2)}</textarea>
+                        <div class="json-actions">
+                            <button class="btn-copy" onclick="copyWorkoutJson(${idx})">複製 JSON</button>
+                            <button class="btn-download" onclick="downloadWorkoutJson(${idx}, '${workout.data.workoutName}')">下載 .json</button>
+                        </div>
+                    </details>
+                </div>
+            `;
+        });
+    }
+
+    html += `
+            <div class="modal-footer">
+                <p class="import-note">💡 匯入 Garmin Connect：複製 JSON 後，可使用瀏覽器擴充功能或 API 工具匯入</p>
+                <button class="btn-close" onclick="closeWorkoutModal()">關閉</button>
+            </div>
+        </div>
+    `;
+
+    modalContent.innerHTML = html;
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+// Close workout modal
+function closeWorkoutModal() {
+    const modal = document.getElementById('workoutModal');
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// Copy workout JSON to clipboard
+function copyWorkoutJson(idx) {
+    const textarea = document.getElementById(`workout-json-${idx}`);
+    textarea.select();
+    document.execCommand('copy');
+
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.textContent = '已複製!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+        btn.textContent = originalText;
+        btn.classList.remove('copied');
+    }, 2000);
+}
+
+// Download workout JSON as file
+function downloadWorkoutJson(idx, filename) {
+    const textarea = document.getElementById(`workout-json-${idx}`);
+    const json = textarea.value;
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('workoutModal');
+    if (e.target === modal) {
+        closeWorkoutModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeWorkoutModal();
+    }
+});
 
 // Display Today's Training
 function displayTodayTraining() {

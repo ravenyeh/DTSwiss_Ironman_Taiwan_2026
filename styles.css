@@ -884,7 +884,7 @@ body {
 .schedule-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 900px;
+    min-width: 1000px;
 }
 
 .schedule-table th,
@@ -2005,6 +2005,313 @@ body {
         content: "需進步：";
         color: var(--text-light);
         font-weight: 500;
+    }
+}
+
+/* View Workout Button */
+.btn-view-workout {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, var(--primary-color), #ff6b6b);
+    color: var(--white);
+    border: none;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+.btn-view-workout:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(227, 24, 55, 0.4);
+}
+
+/* Workout Modal */
+.workout-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.workout-modal.show {
+    display: flex;
+}
+
+.workout-modal-content {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    max-width: 700px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 25px;
+    background: var(--secondary-color);
+    color: var(--white);
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--white);
+    font-size: 2rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    transition: var(--transition);
+}
+
+.modal-close:hover {
+    color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.training-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.training-date {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+}
+
+.training-description {
+    background: var(--bg-light);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    line-height: 1.7;
+    color: var(--text-color);
+}
+
+.no-workout {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-light);
+    font-size: 1.1rem;
+}
+
+.workout-section {
+    background: var(--bg-light);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.workout-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.workout-type-icon {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+.workout-type-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+}
+
+.workout-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.workout-desc {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.workout-stats {
+    display: flex;
+    gap: 20px;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.workout-stats span {
+    background: var(--white);
+    padding: 6px 12px;
+    border-radius: 15px;
+}
+
+.workout-json-details {
+    margin-top: 15px;
+}
+
+.workout-json-details summary {
+    cursor: pointer;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 8px 0;
+}
+
+.workout-json-details summary:hover {
+    text-decoration: underline;
+}
+
+.workout-json {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    background: #fafafa;
+    resize: vertical;
+}
+
+.json-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-copy, .btn-download {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-copy {
+    background: var(--swim-color);
+    color: var(--white);
+}
+
+.btn-copy:hover {
+    background: #005f99;
+}
+
+.btn-copy.copied {
+    background: var(--run-color);
+}
+
+.btn-download {
+    background: var(--bike-color);
+    color: var(--white);
+}
+
+.btn-download:hover {
+    background: #d48f1d;
+}
+
+.modal-footer {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    text-align: center;
+}
+
+.import-note {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 15px;
+}
+
+.btn-close {
+    padding: 10px 30px;
+    background: var(--secondary-color);
+    color: var(--white);
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-close:hover {
+    background: #333;
+    transform: scale(1.02);
+}
+
+/* Mobile Modal */
+@media (max-width: 768px) {
+    .workout-modal {
+        padding: 10px;
+    }
+
+    .workout-modal-content {
+        max-height: 95vh;
+    }
+
+    .modal-header {
+        padding: 15px 20px;
+    }
+
+    .modal-header h3 {
+        font-size: 1.1rem;
+    }
+
+    .modal-body {
+        padding: 15px;
+    }
+
+    .training-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .workout-stats {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .json-actions {
+        flex-direction: column;
+    }
+
+    .btn-copy, .btn-download {
+        width: 100%;
+        text-align: center;
     }
 }
 

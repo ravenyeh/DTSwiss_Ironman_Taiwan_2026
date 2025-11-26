@@ -435,6 +435,13 @@ body {
     margin-right: 8px;
 }
 
+.table-row .icon-img {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
 .table-row .highlight {
     color: var(--primary-color);
     font-weight: 700;
@@ -805,6 +812,11 @@ body {
     font-size: 2rem;
 }
 
+.strategy-icon-img {
+    width: 48px;
+    height: 48px;
+}
+
 .strategy-header h3 {
     font-size: 1.2rem;
 }
@@ -1043,6 +1055,11 @@ body {
     font-size: 2rem;
 }
 
+.segment-icon-img {
+    width: 48px;
+    height: 48px;
+}
+
 .segment-header h3 {
     flex-grow: 1;
 }
@@ -1108,6 +1125,13 @@ body {
 .nutrition-card h4 {
     font-size: 1.3rem;
     margin-bottom: 10px;
+}
+
+.nutrition-icon-img {
+    width: 32px;
+    height: 32px;
+    vertical-align: middle;
+    margin-right: 8px;
 }
 
 .nutrition-freq {

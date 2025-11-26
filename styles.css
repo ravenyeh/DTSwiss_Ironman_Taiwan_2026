@@ -1817,45 +1817,45 @@ body {
     }
 
     .countdown-container {
-        margin-bottom: 15px;
+        margin-bottom: 10px;
     }
 
     .countdown-label {
-        font-size: 0.85rem;
-        margin-bottom: 8px;
+        font-size: 0.75rem;
+        margin-bottom: 5px;
     }
 
     .countdown-timer {
-        gap: 8px;
+        gap: 6px;
     }
 
     .countdown-item {
-        padding: 8px 12px;
-        min-width: 55px;
-        border-radius: 8px;
+        padding: 5px 8px;
+        min-width: 45px;
+        border-radius: 6px;
     }
 
     .countdown-value {
-        font-size: 1.5rem;
+        font-size: 1.2rem;
     }
 
     .countdown-unit {
-        font-size: 0.75rem;
+        font-size: 0.65rem;
     }
 
     .hero-content h1 {
-        font-size: 1.8rem;
-        margin-bottom: 8px;
+        font-size: 1.5rem;
+        margin-bottom: 5px;
     }
 
     .hero-content h2 {
-        font-size: 1.1rem;
-        margin-bottom: 25px;
+        font-size: 1rem;
+        margin-bottom: 15px;
     }
 
     .today-training {
-        margin-top: 20px;
-        padding: 15px 18px;
+        margin-top: 12px;
+        padding: 12px 15px;
         max-width: calc(100% - 20px);
         margin-left: 10px;
         margin-right: 10px;
@@ -1908,48 +1908,48 @@ body {
     }
 
     .hero-slogan-card {
-        margin: 15px 0 10px;
-        padding: 15px 20px;
+        margin: 10px 0 8px;
+        padding: 12px 15px;
     }
 
     .slogan-main {
-        font-size: 1rem;
+        font-size: 0.9rem;
         letter-spacing: 1px;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
     }
 
     .slogan-sub {
-        font-size: 0.85rem;
-        line-height: 1.6;
+        font-size: 0.8rem;
+        line-height: 1.5;
     }
 
     .hero-stats {
         flex-direction: row;
         flex-wrap: wrap;
         justify-content: center;
-        gap: 15px;
-        margin-bottom: 25px;
+        gap: 10px;
+        margin-bottom: 15px;
     }
 
     .stat {
-        min-width: 80px;
+        min-width: 70px;
     }
 
     .stat-icon {
-        font-size: 1.5rem;
+        font-size: 1.2rem;
     }
 
     .stat-icon-img {
-        width: 80px;
-        height: 80px;
+        width: 55px;
+        height: 55px;
     }
 
     .stat-value {
-        font-size: 1.1rem;
+        font-size: 0.95rem;
     }
 
     .stat-label {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
     }
 
     .hero-date {

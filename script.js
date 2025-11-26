@@ -1248,14 +1248,23 @@ function displayTodayTraining() {
 
         // Add view/import button if training has workouts
         if (todayActions && trainingIndex >= 0 && (training.swim || training.bike || training.run)) {
-            // Format today's date as ISO string for override
-            const todayISO = today.toISOString().split('T')[0];
-            todayActions.innerHTML = `
-                <button class="btn-today-workout" onclick="showWorkoutModal(${trainingIndex}, '${todayISO}')">
-                    <span class="btn-icon">📋</span>
-                    查看訓練 / 匯入 Garmin
-                </button>
-            `;
+            // Only override date for random preview (not actual today's training)
+            if (isRandom) {
+                const todayISO = today.toISOString().split('T')[0];
+                todayActions.innerHTML = `
+                    <button class="btn-today-workout" onclick="showWorkoutModal(${trainingIndex}, '${todayISO}')">
+                        <span class="btn-icon">📋</span>
+                        查看訓練 / 匯入 Garmin
+                    </button>
+                `;
+            } else {
+                todayActions.innerHTML = `
+                    <button class="btn-today-workout" onclick="showWorkoutModal(${trainingIndex})">
+                        <span class="btn-icon">📋</span>
+                        查看訓練 / 匯入 Garmin
+                    </button>
+                `;
+            }
             todayActions.style.display = 'block';
         } else if (todayActions) {
             todayActions.style.display = 'none';

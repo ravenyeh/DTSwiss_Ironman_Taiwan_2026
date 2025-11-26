@@ -1847,8 +1847,15 @@ body {
 
     .today-training {
         margin-top: 20px;
-        padding: 15px 20px;
-        max-width: 100%;
+        padding: 15px 18px;
+        max-width: calc(100% - 20px);
+        margin-left: 10px;
+        margin-right: 10px;
+        overflow: visible;
+    }
+
+    .today-training-content {
+        gap: 8px;
     }
 
     .today-label {
@@ -1856,7 +1863,9 @@ body {
     }
 
     .today-description {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        word-break: break-word;
     }
 
     .today-stats {
@@ -1866,6 +1875,28 @@ body {
     .today-stat {
         padding: 4px 10px;
         font-size: 0.8rem;
+    }
+
+    .today-note {
+        font-size: 0.75rem;
+        margin-top: 10px;
+        padding-top: 10px;
+    }
+
+    .today-actions {
+        margin-top: 12px;
+        padding-top: 12px;
+    }
+
+    .btn-today-workout {
+        padding: 10px 18px;
+        font-size: 0.85rem;
+        border-radius: 20px;
+        gap: 6px;
+    }
+
+    .btn-today-workout .btn-icon {
+        font-size: 1rem;
     }
 
     .hero-slogan-card {

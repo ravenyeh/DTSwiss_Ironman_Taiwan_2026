@@ -1742,6 +1742,11 @@ body {
         padding: 10px 0;
     }
 
+    .hero {
+        padding-top: 60px;
+        min-height: calc(100vh);
+    }
+
     .nav-links {
         display: none;
     }

@@ -800,11 +800,21 @@ function generateRunSteps(totalDistance, content) {
 
 // Show workout modal
 function showWorkoutModal(dayIndex) {
+    console.log('showWorkoutModal called with index:', dayIndex);
     const training = trainingData[dayIndex];
+    if (!training) {
+        console.error('Training not found for index:', dayIndex);
+        return;
+    }
     const workouts = convertToGarminWorkout(training, dayIndex);
 
     const modal = document.getElementById('workoutModal');
     const modalContent = document.getElementById('workoutModalContent');
+
+    if (!modal || !modalContent) {
+        console.error('Modal elements not found');
+        return;
+    }
 
     let html = `
         <div class="modal-header">
@@ -827,6 +837,7 @@ function showWorkoutModal(dayIndex) {
             const typeLabel = { swim: '游泳', bike: '自行車', run: '跑步' }[workout.type];
             const typeColor = { swim: 'var(--swim-color)', bike: 'var(--bike-color)', run: 'var(--run-color)' }[workout.type];
 
+            const escapedName = workout.data.workoutName.replace(/'/g, "\\'").replace(/"/g, '\\"');
             html += `
                 <div class="workout-section" style="border-left: 4px solid ${typeColor}">
                     <div class="workout-header">
@@ -843,8 +854,8 @@ function showWorkoutModal(dayIndex) {
                         <summary>查看 JSON</summary>
                         <textarea class="workout-json" id="workout-json-${idx}" rows="12">${JSON.stringify(workout.data, null, 2)}</textarea>
                         <div class="json-actions">
-                            <button class="btn-copy" onclick="copyWorkoutJson(${idx})">複製 JSON</button>
-                            <button class="btn-download" onclick="downloadWorkoutJson(${idx}, '${workout.data.workoutName}')">下載 .json</button>
+                            <button class="btn-copy" onclick="copyWorkoutJson(${idx}, this)">複製 JSON</button>
+                            <button class="btn-download" onclick="downloadWorkoutJson(${idx}, '${escapedName}')">下載 .json</button>
                         </div>
                     </details>
                 </div>
@@ -873,12 +884,11 @@ function closeWorkoutModal() {
 }
 
 // Copy workout JSON to clipboard
-function copyWorkoutJson(idx) {
+function copyWorkoutJson(idx, btn) {
     const textarea = document.getElementById(`workout-json-${idx}`);
     textarea.select();
     document.execCommand('copy');
 
-    const btn = event.target;
     const originalText = btn.textContent;
     btn.textContent = '已複製!';
     btn.classList.add('copied');

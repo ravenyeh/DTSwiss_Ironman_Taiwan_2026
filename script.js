@@ -115,6 +115,9 @@ function populateSchedule(filter = 'all') {
         if (item.type === '比賽日') {
             row.classList.add('race-day');
         }
+        if (item.holiday) {
+            row.classList.add('holiday-row');
+        }
 
         row.innerHTML = `
             <td>${item.week}</td>

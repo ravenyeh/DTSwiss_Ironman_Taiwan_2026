@@ -315,6 +315,107 @@ body {
     font-weight: 600;
 }
 
+/* Today's Training */
+.today-training {
+    margin-top: 25px;
+    padding: 20px 30px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: left;
+}
+
+.today-training-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.today-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    letter-spacing: 1px;
+}
+
+.today-training-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.today-phase {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    width: fit-content;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.today-phase.phase-建構期 { background: rgba(0, 119, 190, 0.7); }
+.today-phase.phase-強化期 { background: rgba(227, 24, 55, 0.7); }
+.today-phase.phase-巔峰期 { background: rgba(245, 166, 35, 0.7); }
+.today-phase.phase-減量期 { background: rgba(76, 175, 80, 0.7); }
+.today-phase.phase-賽前週 { background: rgba(156, 39, 176, 0.7); }
+
+.today-intensity {
+    font-size: 0.85rem;
+    padding: 3px 10px;
+    border-radius: 12px;
+    width: fit-content;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.today-intensity.intensity-休息 { color: #90caf9; }
+.today-intensity.intensity-輕鬆 { color: #a5d6a7; }
+.today-intensity.intensity-中等 { color: #fff59d; }
+.today-intensity.intensity-高強度 { color: #ffab91; }
+.today-intensity.intensity-最大 { color: #ef9a9a; }
+
+.today-description {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.today-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.today-stat {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+.today-stat .stat-icon {
+    font-size: 1rem;
+}
+
+.today-note {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    font-style: italic;
+}
+
 .hero-slogan-card {
     margin: 25px 0 15px;
     padding: 25px 40px;
@@ -1701,6 +1802,29 @@ body {
     .hero-content h2 {
         font-size: 1.1rem;
         margin-bottom: 25px;
+    }
+
+    .today-training {
+        margin-top: 20px;
+        padding: 15px 20px;
+        max-width: 100%;
+    }
+
+    .today-label {
+        font-size: 1rem;
+    }
+
+    .today-description {
+        font-size: 0.85rem;
+    }
+
+    .today-stats {
+        gap: 8px;
+    }
+
+    .today-stat {
+        padding: 4px 10px;
+        font-size: 0.8rem;
     }
 
     .hero-slogan-card {

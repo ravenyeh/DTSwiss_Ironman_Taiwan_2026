@@ -206,6 +206,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Weekly Mileage Chart
     initWeeklyMileageChart();
+
+    // Today's Training
+    displayTodayTraining();
 });
 
 // Initialize Weekly Mileage Chart
@@ -415,3 +418,103 @@ function updateCountdown() {
 // Update countdown every second
 updateCountdown();
 setInterval(updateCountdown, 1000);
+
+// Display Today's Training
+function displayTodayTraining() {
+    const todayLabel = document.getElementById('todayLabel');
+    const todayPhase = document.getElementById('todayPhase');
+    const todayIntensity = document.getElementById('todayIntensity');
+    const todayDescription = document.getElementById('todayDescription');
+    const todaySwim = document.getElementById('todaySwim');
+    const todayBike = document.getElementById('todayBike');
+    const todayRun = document.getElementById('todayRun');
+    const todayHours = document.getElementById('todayHours');
+    const todayNote = document.getElementById('todayNote');
+
+    if (!todayLabel) return;
+
+    const today = new Date();
+    const trainingStartDate = new Date('2026-01-12');
+    const trainingEndDate = new Date('2026-04-12');
+
+    let training = null;
+    let isRandom = false;
+
+    // Check if today is within training period
+    if (today >= trainingStartDate && today <= trainingEndDate) {
+        // Find today's training
+        const todayStr = today.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+
+        training = trainingData.find(d => {
+            const trainingDate = new Date(d.date);
+            return trainingDate.toDateString() === today.toDateString();
+        });
+
+        if (training) {
+            todayLabel.textContent = '今日訓練';
+        }
+    }
+
+    // If not in training period or no training found, show random
+    if (!training) {
+        isRandom = true;
+        // Filter out rest days and get random training
+        const activeTrainings = trainingData.filter(d =>
+            d.intensity !== '休息' && (d.swim || d.bike || d.run)
+        );
+        training = activeTrainings[Math.floor(Math.random() * activeTrainings.length)];
+        todayLabel.textContent = '訓練預覽';
+    }
+
+    if (training) {
+        // Display training info
+        todayPhase.textContent = training.phase;
+        todayPhase.className = 'today-phase phase-' + training.phase;
+
+        todayIntensity.textContent = training.intensity;
+        todayIntensity.className = 'today-intensity intensity-' + training.intensity;
+
+        todayDescription.textContent = training.content;
+
+        // Display stats
+        if (training.swim) {
+            todaySwim.innerHTML = '<span class="stat-icon">🏊</span> ' + training.swim + ' km';
+            todaySwim.style.display = 'inline-flex';
+        } else {
+            todaySwim.style.display = 'none';
+        }
+
+        if (training.bike) {
+            todayBike.innerHTML = '<span class="stat-icon">🚴</span> ' + training.bike + ' km';
+            todayBike.style.display = 'inline-flex';
+        } else {
+            todayBike.style.display = 'none';
+        }
+
+        if (training.run) {
+            todayRun.innerHTML = '<span class="stat-icon">🏃</span> ' + training.run + ' km';
+            todayRun.style.display = 'inline-flex';
+        } else {
+            todayRun.style.display = 'none';
+        }
+
+        if (training.hours) {
+            todayHours.innerHTML = '<span class="stat-icon">⏱</span> ' + training.hours + ' h';
+            todayHours.style.display = 'inline-flex';
+        } else {
+            todayHours.style.display = 'none';
+        }
+
+        // Display note if random
+        if (isRandom) {
+            todayNote.textContent = '※ 未到訓練日，隨機顯示';
+            todayNote.style.display = 'block';
+        } else {
+            todayNote.style.display = 'none';
+        }
+    }
+}

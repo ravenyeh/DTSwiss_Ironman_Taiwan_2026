@@ -36,6 +36,10 @@
       "dest": "/api/garmin/workout.js"
     },
     {
+      "src": "/api/garmin/import",
+      "dest": "/api/garmin/import.js"
+    },
+    {
       "src": "/(.*)",
       "dest": "/$1"
     }

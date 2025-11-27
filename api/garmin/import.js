@@ -65,10 +65,20 @@ module.exports = async (req, res) => {
                     }
                 }
 
-                // Schedule if date provided
+                // Schedule if date provided - use POST method with relative path
                 if (scheduledDate && createdWorkout && createdWorkout.workoutId) {
                     try {
-                        await GC.scheduleWorkout(createdWorkout.workoutId, scheduledDate);
+                        const scheduleEndpoint = `/workout-service/schedule/${createdWorkout.workoutId}`;
+                        const schedulePayload = { date: scheduledDate };
+
+                        console.log('Scheduling workout:', createdWorkout.workoutId, 'to date:', scheduledDate);
+
+                        if (GC.client && GC.client.post) {
+                            const scheduleResult = await GC.client.post(scheduleEndpoint, schedulePayload);
+                            console.log('Schedule result:', JSON.stringify(scheduleResult?.data || scheduleResult));
+                        } else if (typeof GC.scheduleWorkout === 'function') {
+                            await GC.scheduleWorkout(createdWorkout.workoutId, scheduledDate);
+                        }
                     } catch (e) {
                         console.log('Schedule failed:', e.message);
                     }
@@ -77,7 +87,8 @@ module.exports = async (req, res) => {
                 results.push({
                     success: true,
                     workoutName: workout.workoutName,
-                    workoutId: createdWorkout?.workoutId
+                    workoutId: createdWorkout?.workoutId,
+                    scheduledDate: scheduledDate || null
                 });
             } catch (e) {
                 results.push({

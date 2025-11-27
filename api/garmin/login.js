@@ -60,18 +60,31 @@ module.exports = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Garmin login error:', error);
+        console.error('Garmin login error:', error.message);
+        console.error('Full error:', JSON.stringify(error, null, 2));
 
         let errorMessage = '登入失敗';
-        if (error.message.includes('credentials')) {
-            errorMessage = 'Email 或密碼錯誤';
-        } else if (error.message.includes('network')) {
-            errorMessage = '網路連線錯誤，請稍後再試';
+        let errorDetail = '';
+
+        if (error.message) {
+            const msg = error.message.toLowerCase();
+            if (msg.includes('credentials') || msg.includes('password') || msg.includes('401')) {
+                errorMessage = 'Email 或密碼錯誤';
+            } else if (msg.includes('network') || msg.includes('fetch')) {
+                errorMessage = '網路連線錯誤，請稍後再試';
+            } else if (msg.includes('captcha') || msg.includes('robot')) {
+                errorMessage = 'Garmin 需要驗證碼，請使用手動匯入方式';
+            } else if (msg.includes('blocked') || msg.includes('forbidden')) {
+                errorMessage = 'Garmin 暫時封鎖此連線，請稍後再試或使用手動匯入';
+            } else {
+                errorDetail = error.message;
+            }
         }
 
         return res.status(401).json({
             success: false,
-            error: errorMessage
+            error: errorMessage,
+            detail: errorDetail || 'Garmin Connect API 登入失敗，建議使用「複製 JSON」或「下載 .json」功能手動匯入'
         });
     }
 };

@@ -487,6 +487,8 @@ body {
 }
 
 .hero-slogan-card {
+    display: block;
+    text-decoration: none;
     margin: 25px 0 15px;
     padding: 25px 40px;
     background: rgba(0, 0, 0, 0.4);
@@ -494,6 +496,21 @@ body {
     border-radius: 16px;
     border: 1px solid rgba(255, 215, 0, 0.3);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.hero-slogan-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(255, 215, 0, 0.2);
+    border-color: rgba(255, 215, 0, 0.6);
+}
+
+.tyone-logo {
+    display: block;
+    max-width: 120px;
+    height: auto;
+    margin: 0 auto 15px;
+    filter: brightness(1.1);
 }
 
 .hero-slogan {

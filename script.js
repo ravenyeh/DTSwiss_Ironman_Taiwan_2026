@@ -873,35 +873,26 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
         });
     }
 
-    // Garmin Connect section
-    const isLoggedIn = getGarminSession();
+    // Garmin Connect section - Direct import (login + import in one step)
     html += `
             <div class="garmin-section">
                 <h4>匯入 Garmin Connect</h4>
                 <div class="garmin-manual-note">
                     <p><strong>💡 建議方式：</strong>使用上方「複製 JSON」或「下載 .json」，然後到 <a href="https://connect.garmin.com/modern/workouts" target="_blank">Garmin Connect 網站</a> 手動匯入</p>
                 </div>
-                ${isLoggedIn ? `
-                    <div class="garmin-logged-in">
-                        <span class="garmin-user">✓ 已登入 Garmin Connect</span>
-                        <button class="btn-garmin-logout" onclick="garminLogout()">登出</button>
-                    </div>
-                    ${workouts.length > 0 ? `
-                        <button class="btn-garmin-import" onclick="importAllToGarmin(${dayIndex})">
-                            匯入全部訓練到 Garmin
-                        </button>
-                    ` : ''}
-                ` : `
+                ${workouts.length > 0 ? `
                     <details class="garmin-login-details">
                         <summary>自動匯入（實驗性功能）</summary>
                         <div class="garmin-login-form" id="garminLoginForm">
                             <p class="garmin-warning">⚠️ Garmin 可能會封鎖自動登入，如失敗請使用手動匯入</p>
                             <input type="email" id="garminEmail" placeholder="Garmin Email" class="garmin-input">
                             <input type="password" id="garminPassword" placeholder="密碼" class="garmin-input">
-                            <button class="btn-garmin-login" onclick="garminLogin()">嘗試登入</button>
+                            <button class="btn-garmin-import" onclick="directImportToGarmin(${dayIndex})">
+                                登入並匯入訓練
+                            </button>
                         </div>
                     </details>
-                `}
+                ` : ''}
                 <div id="garminStatus" class="garmin-status"></div>
             </div>
             <div class="modal-footer">
@@ -1131,6 +1122,62 @@ async function importAllToGarmin(dayIndex) {
         updateGarminStatus(`部分成功：${successCount}/${workouts.length} 個訓練已匯入`, true);
     } else {
         updateGarminStatus(`匯入失敗：${errors[0]}`, true);
+    }
+}
+
+// Direct import to Garmin (login + import in one request)
+async function directImportToGarmin(dayIndex) {
+    const email = document.getElementById('garminEmail')?.value;
+    const password = document.getElementById('garminPassword')?.value;
+
+    if (!email || !password) {
+        updateGarminStatus('請輸入 Email 和密碼', true);
+        return;
+    }
+
+    const training = trainingData[dayIndex];
+    const overrideDate = window.currentWorkoutOverrideDate;
+    const workouts = convertToGarminWorkout(training, dayIndex, overrideDate);
+
+    if (workouts.length === 0) {
+        updateGarminStatus('沒有訓練可匯入', true);
+        return;
+    }
+
+    updateGarminStatus('登入並匯入中...', false);
+
+    try {
+        const workoutPayloads = workouts.map(w => ({
+            workout: w.data,
+            scheduledDate: w.data.scheduledDate
+        }));
+
+        const response = await fetch('/api/garmin/import', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password,
+                workouts: workoutPayloads
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            updateGarminStatus(data.message || '匯入成功！', false);
+        } else {
+            let errorMsg = data.error || '匯入失敗';
+            if (data.detail) {
+                errorMsg += '\n' + data.detail;
+            }
+            updateGarminStatus(errorMsg, true);
+        }
+    } catch (error) {
+        console.error('Direct import error:', error);
+        updateGarminStatus('連線錯誤，請使用「複製 JSON」或「下載 .json」手動匯入', true);
     }
 }
 

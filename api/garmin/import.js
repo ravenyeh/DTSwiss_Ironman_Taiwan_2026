@@ -1,5 +1,6 @@
 const { GarminConnect } = require('@gooin/garmin-connect');
 
+// Combined login + import endpoint for Vercel serverless
 module.exports = async (req, res) => {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');

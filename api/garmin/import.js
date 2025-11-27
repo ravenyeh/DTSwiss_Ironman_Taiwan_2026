@@ -65,10 +65,10 @@ module.exports = async (req, res) => {
                     }
                 }
 
-                // Schedule if date provided - use POST method
+                // Schedule if date provided - use POST method with relative path
                 if (scheduledDate && createdWorkout && createdWorkout.workoutId) {
                     try {
-                        const scheduleEndpoint = `https://connect.garmin.com/workout-service/schedule/${createdWorkout.workoutId}`;
+                        const scheduleEndpoint = `/workout-service/schedule/${createdWorkout.workoutId}`;
                         const schedulePayload = { date: scheduledDate };
 
                         console.log('Scheduling workout:', createdWorkout.workoutId, 'to date:', scheduledDate);

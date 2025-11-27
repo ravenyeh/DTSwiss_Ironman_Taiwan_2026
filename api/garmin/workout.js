@@ -75,21 +75,33 @@ module.exports = async (req, res) => {
         }
 
         // Schedule the workout if date is provided
+        let scheduled = false;
+        let scheduleError = null;
         if (scheduledDate && createdWorkout && createdWorkout.workoutId) {
             try {
-                await GC.scheduleWorkout(createdWorkout.workoutId, scheduledDate);
+                // Correct format: first param is object with workoutId, second is Date object
+                await GC.scheduleWorkout(
+                    { workoutId: createdWorkout.workoutId },
+                    new Date(scheduledDate)
+                );
+                scheduled = true;
+                console.log('Workout scheduled successfully:', createdWorkout.workoutId, 'to', scheduledDate);
             } catch (e) {
                 console.log('Schedule workout failed:', e.message);
-                // Continue even if scheduling fails
+                scheduleError = e.message;
             }
         }
 
         return res.status(200).json({
             success: true,
-            message: '訓練已成功匯入 Garmin Connect',
+            message: scheduled
+                ? '訓練已成功匯入並排程到 Garmin Connect'
+                : '訓練已匯入 Garmin Connect' + (scheduleError ? '，但排程失敗' : ''),
             workout: {
                 workoutId: createdWorkout?.workoutId,
-                workoutName: workout.workoutName
+                workoutName: workout.workoutName,
+                scheduled: scheduled,
+                scheduledDate: scheduled ? scheduledDate : null
             }
         });
 

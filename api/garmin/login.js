@@ -24,10 +24,14 @@ module.exports = async (req, res) => {
             return res.status(400).json({ error: '請提供 Email 和密碼' });
         }
 
-        const GC = new GarminConnect();
+        // Initialize with credentials (required for @gooin/garmin-connect)
+        const GC = new GarminConnect({
+            username: email,
+            password: password
+        });
 
         // Login to Garmin Connect
-        await GC.login(email, password);
+        await GC.login();
 
         // Generate session ID
         const sessionId = `gc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

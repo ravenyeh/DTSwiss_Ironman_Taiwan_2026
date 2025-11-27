@@ -18,6 +18,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@gooin/garmin-connect": "^1.7.4"
+    "@gooin/garmin-connect": "1.6.6"
   }
 }

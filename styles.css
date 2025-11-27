@@ -227,7 +227,7 @@ body {
 .countdown-timer {
     display: flex;
     justify-content: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 .countdown-item {
@@ -235,43 +235,43 @@ body {
     flex-direction: column;
     align-items: center;
     background: rgba(227, 24, 55, 0.9);
-    padding: 10px 14px;
-    border-radius: 10px;
-    min-width: 60px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    min-width: 50px;
 }
 
 .countdown-value {
-    font-size: 1.8rem;
+    font-size: 1.4rem;
     font-weight: 900;
     line-height: 1;
 }
 
 .countdown-unit {
-    font-size: 0.8rem;
+    font-size: 0.7rem;
     font-weight: 500;
-    margin-top: 4px;
+    margin-top: 3px;
     opacity: 0.9;
 }
 
 .hero-content h1 {
-    font-size: 3.5rem;
+    font-size: 2.8rem;
     font-weight: 900;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
 .hero-content h2 {
-    font-size: 1.8rem;
+    font-size: 1.4rem;
     font-weight: 300;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     color: rgba(255,255,255,0.9);
 }
 
 .hero-stats {
     display: flex;
     justify-content: center;
-    gap: 50px;
-    margin-bottom: 30px;
+    gap: 35px;
+    margin-bottom: 20px;
 }
 
 .stat {
@@ -281,25 +281,25 @@ body {
 }
 
 .stat-icon {
-    font-size: 2.5rem;
-    margin-bottom: 10px;
+    font-size: 2rem;
+    margin-bottom: 6px;
 }
 
 .stat-icon-img {
-    width: 65px;
-    height: 65px;
+    width: 50px;
+    height: 50px;
     object-fit: contain;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
 }
 
 .stat-value {
-    font-size: 1.6rem;
+    font-size: 1.3rem;
     font-weight: 700;
     color: var(--primary-color);
 }
 
 .stat-label {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     color: rgba(255,255,255,0.7);
 }
 

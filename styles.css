@@ -507,9 +507,9 @@ body {
 
 .tyone-logo {
     display: block;
-    max-width: 120px;
+    max-width: 48px;
     height: auto;
-    margin: 0 auto 15px;
+    margin: 0 auto 12px;
     filter: brightness(1.1);
 }
 

@@ -505,11 +505,23 @@ body {
     border-color: rgba(255, 215, 0, 0.6);
 }
 
-.tyone-logo {
-    display: block;
-    max-width: 48px;
-    height: auto;
-    margin: 0 auto 12px;
+.tyone-logos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.tyone-favicon {
+    width: 36px;
+    height: 36px;
+    filter: brightness(1.1);
+}
+
+.tyone-wordmark {
+    height: 28px;
+    width: auto;
     filter: brightness(1.1);
 }
 

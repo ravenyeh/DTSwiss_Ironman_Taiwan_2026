@@ -18,6 +18,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@flow-js/garmin-connect": "^1.0.3"
+    "garmin-connect": "^1.6.4"
   }
 }

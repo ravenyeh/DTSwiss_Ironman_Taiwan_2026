@@ -1,4 +1,4 @@
-const { GarminConnect } = require('@flow-js/garmin-connect');
+const { GarminConnect } = require('garmin-connect');
 
 // Store sessions in memory (for demo - in production use Redis/DB)
 const sessions = new Map();

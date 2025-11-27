@@ -434,9 +434,9 @@ function convertToGarminWorkout(training, index, overrideDate = null) {
 
     // Sport type mappings: 1=running, 2=cycling, 4=swimming (pool), 5=swimming (open water)
     const sportTypes = {
-        swim: { id: 4, name: 'POOL_SWIM' },
-        bike: { id: 2, name: 'CYCLING' },
-        run: { id: 1, name: 'RUNNING' }
+        swim: { sportTypeId: 4, sportTypeKey: 'swimming_pool' },
+        bike: { sportTypeId: 2, sportTypeKey: 'cycling' },
+        run: { sportTypeId: 1, sportTypeKey: 'running' }
     };
 
     // Parse workout content to extract details
@@ -447,7 +447,9 @@ function convertToGarminWorkout(training, index, overrideDate = null) {
 
     // Create swim workout if exists
     if (training.swim && parseFloat(training.swim) > 0) {
+        resetStepIdCounter();
         const swimDistance = parseFloat(training.swim) * 1000; // Convert to meters
+        const rawSteps = generateSwimSteps(swimDistance, content);
         const swimWorkout = {
             workoutId: null,
             ownerId: null,
@@ -457,7 +459,7 @@ function convertToGarminWorkout(training, index, overrideDate = null) {
             workoutSegments: [{
                 segmentOrder: 1,
                 sportType: sportTypes.swim,
-                workoutSteps: generateSwimSteps(swimDistance, content)
+                workoutSteps: rawSteps.map(step => formatStep(step))
             }],
             estimatedDurationInSecs: Math.round(swimDistance * 2.5 / 100 * 60), // Estimate based on 2:30/100m
             estimatedDistanceInMeters: swimDistance,
@@ -470,7 +472,9 @@ function convertToGarminWorkout(training, index, overrideDate = null) {
 
     // Create bike workout if exists
     if (training.bike && parseFloat(training.bike) > 0) {
+        resetStepIdCounter();
         const bikeDistance = parseFloat(training.bike) * 1000; // Convert to meters
+        const rawSteps = generateBikeSteps(bikeDistance, content);
         const bikeWorkout = {
             workoutId: null,
             ownerId: null,
@@ -480,7 +484,7 @@ function convertToGarminWorkout(training, index, overrideDate = null) {
             workoutSegments: [{
                 segmentOrder: 1,
                 sportType: sportTypes.bike,
-                workoutSteps: generateBikeSteps(bikeDistance, content)
+                workoutSteps: rawSteps.map(step => formatStep(step))
             }],
             estimatedDurationInSecs: Math.round(bikeDistance / 1000 / 30 * 3600), // Estimate based on 30km/h
             estimatedDistanceInMeters: bikeDistance,
@@ -491,7 +495,9 @@ function convertToGarminWorkout(training, index, overrideDate = null) {
 
     // Create run workout if exists
     if (training.run && parseFloat(training.run) > 0) {
+        resetStepIdCounter();
         const runDistance = parseFloat(training.run) * 1000; // Convert to meters
+        const rawSteps = generateRunSteps(runDistance, content);
         const runWorkout = {
             workoutId: null,
             ownerId: null,
@@ -501,7 +507,7 @@ function convertToGarminWorkout(training, index, overrideDate = null) {
             workoutSegments: [{
                 segmentOrder: 1,
                 sportType: sportTypes.run,
-                workoutSteps: generateRunSteps(runDistance, content)
+                workoutSteps: rawSteps.map(step => formatStep(step))
             }],
             estimatedDurationInSecs: Math.round(runDistance / 1000 * 6 * 60), // Estimate based on 6:00/km
             estimatedDistanceInMeters: runDistance,
@@ -522,6 +528,41 @@ function extractWorkoutPart(content, sport) {
         }
     }
     return content;
+}
+
+// Format a workout step with required Garmin API fields
+let stepIdCounter = 0;
+function formatStep(step) {
+    const stepId = ++stepIdCounter;
+    const formattedStep = {
+        type: step.stepType.stepTypeKey === 'repeat' ? 'RepeatGroupDTO' : 'ExecutableStepDTO',
+        stepId: stepId,
+        stepOrder: step.stepOrder,
+        childStepId: null,
+        stepType: step.stepType,
+        targetType: step.targetType || { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' },
+        targetValueOne: null,
+        targetValueTwo: null
+    };
+
+    // Add endCondition for non-repeat steps
+    if (step.endCondition) {
+        formattedStep.endCondition = step.endCondition;
+        formattedStep.endConditionValue = step.endConditionValue;
+    }
+
+    // Handle repeat steps with nested workoutSteps
+    if (step.workoutSteps) {
+        formattedStep.numberOfIterations = step.numberOfIterations;
+        formattedStep.workoutSteps = step.workoutSteps.map(childStep => formatStep(childStep));
+    }
+
+    return formattedStep;
+}
+
+// Reset step ID counter for each workout
+function resetStepIdCounter() {
+    stepIdCounter = 0;
 }
 
 // Generate swim workout steps

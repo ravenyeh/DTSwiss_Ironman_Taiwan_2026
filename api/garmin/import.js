@@ -65,19 +65,22 @@ module.exports = async (req, res) => {
                     }
                 }
 
-                // Schedule if date provided - use POST method with relative path
+                // Schedule if date provided - use correct scheduleWorkout format
+                let scheduled = false;
                 if (scheduledDate && createdWorkout && createdWorkout.workoutId) {
                     try {
-                        const scheduleEndpoint = `/workout-service/schedule/${createdWorkout.workoutId}`;
-                        const schedulePayload = { date: scheduledDate };
-
                         console.log('Scheduling workout:', createdWorkout.workoutId, 'to date:', scheduledDate);
 
-                        if (GC.client && GC.client.post) {
-                            const scheduleResult = await GC.client.post(scheduleEndpoint, schedulePayload);
-                            console.log('Schedule result:', JSON.stringify(scheduleResult?.data || scheduleResult));
-                        } else if (typeof GC.scheduleWorkout === 'function') {
-                            await GC.scheduleWorkout(createdWorkout.workoutId, scheduledDate);
+                        // Correct format: first param is object with workoutId, second is Date object
+                        if (typeof GC.scheduleWorkout === 'function') {
+                            await GC.scheduleWorkout(
+                                { workoutId: createdWorkout.workoutId },
+                                new Date(scheduledDate)
+                            );
+                            scheduled = true;
+                            console.log('Workout scheduled successfully');
+                        } else {
+                            console.log('scheduleWorkout method not available');
                         }
                     } catch (e) {
                         console.log('Schedule failed:', e.message);
@@ -88,7 +91,8 @@ module.exports = async (req, res) => {
                     success: true,
                     workoutName: workout.workoutName,
                     workoutId: createdWorkout?.workoutId,
-                    scheduledDate: scheduledDate || null
+                    scheduledDate: scheduledDate || null,
+                    scheduled: scheduled
                 });
             } catch (e) {
                 results.push({
@@ -100,11 +104,24 @@ module.exports = async (req, res) => {
         }
 
         const successCount = results.filter(r => r.success).length;
+        const scheduledCount = results.filter(r => r.success && r.scheduled).length;
+
+        let message = `成功匯入 ${successCount}/${workouts.length} 個訓練`;
+        if (scheduledCount > 0) {
+            message += `，${scheduledCount} 個已排程`;
+        } else if (successCount > 0) {
+            message += '（排程功能暫不可用）';
+        }
 
         return res.status(200).json({
             success: successCount > 0,
-            message: `成功匯入 ${successCount}/${workouts.length} 個訓練`,
-            results: results
+            message: message,
+            results: results,
+            summary: {
+                total: workouts.length,
+                imported: successCount,
+                scheduled: scheduledCount
+            }
         });
 
     } catch (error) {

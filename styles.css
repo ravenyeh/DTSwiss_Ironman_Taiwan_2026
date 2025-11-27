@@ -2557,6 +2557,51 @@ body {
     text-align: center;
 }
 
+.garmin-manual-note {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.garmin-manual-note p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.garmin-manual-note a {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.garmin-login-details {
+    margin-top: 10px;
+}
+
+.garmin-login-details summary {
+    cursor: pointer;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.garmin-login-details summary:hover {
+    opacity: 1;
+}
+
+.garmin-warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: #fff;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+    border-left: 3px solid #ffc107;
+}
+
 .garmin-logged-in {
     display: flex;
     align-items: center;

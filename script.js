@@ -878,6 +878,9 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
     html += `
             <div class="garmin-section">
                 <h4>匯入 Garmin Connect</h4>
+                <div class="garmin-manual-note">
+                    <p><strong>💡 建議方式：</strong>使用上方「複製 JSON」或「下載 .json」，然後到 <a href="https://connect.garmin.com/modern/workouts" target="_blank">Garmin Connect 網站</a> 手動匯入</p>
+                </div>
                 ${isLoggedIn ? `
                     <div class="garmin-logged-in">
                         <span class="garmin-user">✓ 已登入 Garmin Connect</span>
@@ -889,12 +892,15 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
                         </button>
                     ` : ''}
                 ` : `
-                    <div class="garmin-login-form" id="garminLoginForm">
-                        <input type="email" id="garminEmail" placeholder="Garmin Email" class="garmin-input">
-                        <input type="password" id="garminPassword" placeholder="密碼" class="garmin-input">
-                        <button class="btn-garmin-login" onclick="garminLogin()">登入 Garmin Connect</button>
-                        <p class="garmin-note">登入後可直接匯入訓練到 Garmin 行事曆</p>
-                    </div>
+                    <details class="garmin-login-details">
+                        <summary>自動匯入（實驗性功能）</summary>
+                        <div class="garmin-login-form" id="garminLoginForm">
+                            <p class="garmin-warning">⚠️ Garmin 可能會封鎖自動登入，如失敗請使用手動匯入</p>
+                            <input type="email" id="garminEmail" placeholder="Garmin Email" class="garmin-input">
+                            <input type="password" id="garminPassword" placeholder="密碼" class="garmin-input">
+                            <button class="btn-garmin-login" onclick="garminLogin()">嘗試登入</button>
+                        </div>
+                    </details>
                 `}
                 <div id="garminStatus" class="garmin-status"></div>
             </div>
@@ -1012,11 +1018,15 @@ async function garminLogin() {
                 }
             }, 1000);
         } else {
-            updateGarminStatus(data.error || '登入失敗', true);
+            let errorMsg = data.error || '登入失敗';
+            if (data.detail) {
+                errorMsg += '\n' + data.detail;
+            }
+            updateGarminStatus(errorMsg, true);
         }
     } catch (error) {
         console.error('Garmin login error:', error);
-        updateGarminStatus('連線錯誤，請稍後再試', true);
+        updateGarminStatus('連線錯誤，請使用「複製 JSON」或「下載 .json」手動匯入', true);
     }
 }
 

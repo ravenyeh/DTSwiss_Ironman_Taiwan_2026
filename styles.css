@@ -1771,6 +1771,114 @@ body {
     color: rgba(255,255,255,0.6);
 }
 
+/* Desktop Optimization */
+@media (min-width: 1025px) {
+    .hero {
+        min-height: 100vh;
+        padding: 80px 20px 40px;
+    }
+
+    .hero-content {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .countdown-container {
+        margin-bottom: 15px;
+    }
+
+    .countdown-item {
+        padding: 8px 14px;
+        min-width: 60px;
+    }
+
+    .countdown-value {
+        font-size: 1.6rem;
+    }
+
+    .hero-content h1 {
+        font-size: 2.4rem;
+        margin-bottom: 5px;
+    }
+
+    .hero-content h2 {
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+    }
+
+    .hero-stats {
+        gap: 25px;
+        margin-bottom: 15px;
+    }
+
+    .stat-icon-img {
+        width: 45px;
+        height: 45px;
+    }
+
+    .stat-value {
+        font-size: 1.1rem;
+    }
+
+    .hero-slogan-card {
+        margin: 15px 0 12px;
+        padding: 18px 30px;
+    }
+
+    .slogan-main {
+        font-size: 1.3rem;
+        margin-bottom: 10px;
+    }
+
+    .slogan-sub {
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .today-training {
+        margin-top: 15px;
+        padding: 15px 20px;
+        max-width: 550px;
+    }
+
+    .today-label {
+        font-size: 1rem;
+    }
+
+    .today-training-header {
+        margin-bottom: 12px;
+    }
+
+    .today-description {
+        font-size: 0.9rem;
+    }
+
+    .today-stat {
+        padding: 4px 10px;
+        font-size: 0.8rem;
+    }
+
+    .today-note {
+        margin-top: 10px;
+        padding-top: 10px;
+        font-size: 0.75rem;
+    }
+
+    .today-actions {
+        margin-top: 12px;
+        padding-top: 12px;
+    }
+
+    .btn-today-workout {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+
+    .scroll-indicator {
+        bottom: 20px;
+    }
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
     .phases {

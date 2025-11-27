@@ -80,6 +80,10 @@ body {
     height: 45px;
 }
 
+.nav-logo.garmin-logo {
+    height: 22px;
+}
+
 .nav-logo-separator {
     font-size: 1.2rem;
     font-weight: 300;
@@ -1826,19 +1830,23 @@ body {
     }
 
     .nav-logos {
-        gap: 8px;
+        gap: 5px;
     }
 
     .nav-logo.dt-logo {
-        height: 18px;
+        height: 14px;
     }
 
     .nav-logo.ironman-logo {
-        height: 32px;
+        height: 26px;
+    }
+
+    .nav-logo.garmin-logo {
+        height: 14px;
     }
 
     .nav-logo-separator {
-        font-size: 1rem;
+        font-size: 0.8rem;
     }
 
     .logo-icon {
@@ -2042,6 +2050,31 @@ body {
     .ironman-badge {
         padding: 15px 30px;
         font-size: 1.1rem;
+    }
+
+    .footer-logos {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .footer-logo-img {
+        height: 25px;
+    }
+
+    .footer-logo-img.ironman-footer {
+        height: 40px;
+    }
+
+    .footer-logo-img.garmin-footer {
+        height: 20px;
+    }
+
+    .footer-logo-separator {
+        font-size: 1rem;
+    }
+
+    .footer-disclaimer p {
+        font-size: 0.7rem;
     }
 }
 

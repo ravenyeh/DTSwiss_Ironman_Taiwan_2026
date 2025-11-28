@@ -1622,21 +1622,14 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
     html += `
             <div class="garmin-section">
                 <h4>匯入 Garmin Connect</h4>
-                <div class="garmin-manual-note">
-                    <p><strong>💡 建議方式：</strong>使用上方「複製 JSON」或「下載 .json」，然後到 <a href="https://connect.garmin.com/modern/workouts" target="_blank">Garmin Connect 網站</a> 手動匯入</p>
-                </div>
                 ${workouts.length > 0 ? `
-                    <details class="garmin-login-details">
-                        <summary>自動匯入（實驗性功能）</summary>
-                        <div class="garmin-login-form" id="garminLoginForm">
-                            <p class="garmin-warning">⚠️ Garmin 可能會封鎖自動登入，如失敗請使用手動匯入</p>
-                            <input type="email" id="garminEmail" placeholder="Garmin Email" class="garmin-input">
-                            <input type="password" id="garminPassword" placeholder="密碼" class="garmin-input">
-                            <button class="btn-garmin-import" onclick="directImportToGarmin(${dayIndex})">
-                                登入並匯入訓練
-                            </button>
-                        </div>
-                    </details>
+                    <div class="garmin-login-form" id="garminLoginForm">
+                        <input type="email" id="garminEmail" placeholder="Garmin Email" class="garmin-input">
+                        <input type="password" id="garminPassword" placeholder="密碼" class="garmin-input">
+                        <button class="btn-garmin-import" onclick="directImportToGarmin(${dayIndex})">
+                            登入並匯入訓練
+                        </button>
+                    </div>
                 ` : ''}
                 <div id="garminStatus" class="garmin-status"></div>
             </div>

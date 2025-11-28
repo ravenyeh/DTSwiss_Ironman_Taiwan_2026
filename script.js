@@ -1318,7 +1318,8 @@ function generateRunSteps(totalDistance, content) {
     let stepOrder = 1;
 
     // Determine workout type from content
-    const isRecovery = content.includes('恢復') || content.includes('輕鬆');
+    const isRecoveryRun = content.includes('恢復');  // Very slow recovery pace
+    const isEasyRun = content.includes('輕鬆');      // Easy/comfortable pace
     const isLongRun = totalDistance >= 15000 || content.includes('長跑');
     const isBrick = content.includes('磚式') || content.includes('接續跑') || content.includes('轉換');
     const isTempo = content.includes('節奏跑') || content.includes('T配速');
@@ -1575,9 +1576,13 @@ function generateRunSteps(totalDistance, content) {
             });
         }
 
-    } else if (isRecovery) {
-        // Recovery/easy run - use specific pace from content if provided
-        const targetPace = contentPace || recoveryPace;
+    } else if (isRecoveryRun || isEasyRun) {
+        // Recovery run (恢復跑) uses very slow recoveryPace ~6:45/km
+        // Easy run (輕鬆跑) uses comfortable easyPace ~5:10/km
+        const defaultPace = isRecoveryRun ? recoveryPace : easyPace;
+        const targetPace = contentPace || defaultPace;
+
+        // Simple structure: just run the distance at easy/recovery pace
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
@@ -1601,7 +1606,7 @@ function generateRunSteps(totalDistance, content) {
         });
 
     } else {
-        // Default: easy run with pace target - use specific pace from content if provided
+        // Default: use specific pace from content or easy pace
         const targetPace = contentPace || easyPace;
         const warmupDistance = Math.round(totalDistance * 0.1);
         const mainDistance = Math.round(totalDistance * 0.8);

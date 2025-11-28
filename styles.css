@@ -2519,6 +2519,30 @@ body {
     margin-top: 15px;
 }
 
+.workout-actions-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.workout-actions-row .workout-json-details {
+    flex: 1;
+    min-width: 100px;
+}
+
+.btn-trainer {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--white);
+    white-space: nowrap;
+}
+
 .workout-json-details summary {
     cursor: pointer;
     color: var(--primary-color);
@@ -2667,6 +2691,15 @@ body {
     }
 
     .btn-copy, .btn-download {
+        width: 100%;
+        text-align: center;
+    }
+
+    .workout-actions-row {
+        flex-direction: column;
+    }
+
+    .workout-actions-row .btn-trainer {
         width: 100%;
         text-align: center;
     }

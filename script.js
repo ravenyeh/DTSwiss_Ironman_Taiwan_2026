@@ -1601,16 +1601,18 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
                         <span>距離: ${(workout.data.estimatedDistanceInMeters / 1000).toFixed(1)} km</span>
                         <span>預估時間: ${Math.round(workout.data.estimatedDurationInSecs / 60)} 分鐘</span>
                     </div>
-                    <details class="workout-json-details">
-                        <summary>查看 JSON</summary>
-                        <textarea class="workout-json" id="workout-json-${idx}" rows="12">${JSON.stringify(workout.data, null, 2)}</textarea>
-                        <div class="json-actions">
-                            <button class="btn-copy" onclick="copyWorkoutJson(${idx}, this)">複製 JSON</button>
-                            <button class="btn-download" onclick="downloadWorkoutJson(${idx}, '${escapedName}')">下載 .json</button>
-                            ${isBike ? `<button class="btn-download btn-zwo" onclick="downloadWorkoutZWO(${idx}, '${escapedName}')">下載 ZWO</button>
-                            <button class="btn-download btn-erg" onclick="downloadWorkoutERG(${idx}, '${escapedName}')">下載 ERG</button>` : ''}
-                        </div>
-                    </details>
+                    <div class="workout-actions-row">
+                        <details class="workout-json-details">
+                            <summary>查看 JSON</summary>
+                            <textarea class="workout-json" id="workout-json-${idx}" rows="12">${JSON.stringify(workout.data, null, 2)}</textarea>
+                            <div class="json-actions">
+                                <button class="btn-copy" onclick="copyWorkoutJson(${idx}, this)">複製 JSON</button>
+                                <button class="btn-download" onclick="downloadWorkoutJson(${idx}, '${escapedName}')">下載 .json</button>
+                            </div>
+                        </details>
+                        ${isBike ? `<button class="btn-trainer btn-zwo" onclick="downloadWorkoutZWO(${idx}, '${escapedName}')">下載 ZWO</button>
+                        <button class="btn-trainer btn-erg" onclick="downloadWorkoutERG(${idx}, '${escapedName}')">下載 ERG</button>` : ''}
+                    </div>
                 </div>
             `;
         });

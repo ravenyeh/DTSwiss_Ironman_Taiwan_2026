@@ -962,7 +962,9 @@ function generateBikeSteps(totalDistance, content) {
     const isRecovery = content.includes('恢復') || content.includes('輕鬆');
     const isLongRide = totalDistance >= 100000 || content.includes('長距離');
     const hasBrick = content.includes('磚式') || content.includes('接續跑');
-    const hasFTP = content.includes('FTP') || content.includes('測試');
+    const isRaceSimulation = content.includes('模擬賽') || content.includes('模擬');
+    // FTP test - only trigger on actual FTP test, not "測試穩定度" etc.
+    const hasFTP = content.includes('FTP') || (content.includes('測試') && !isRaceSimulation);
     const hasClimb = content.includes('爬坡');
 
     // Check for Sweet Spot intervals: "3x20分鐘 @ Sweet Spot", "4x15分鐘 @ Sweet Spot"
@@ -982,7 +984,42 @@ function generateBikeSteps(totalDistance, content) {
     const normalCadence = getCadenceTarget(85, 95);
     const highCadence = getCadenceTarget(95, 105);
 
-    if (ssMatch) {
+    if (isRaceSimulation) {
+        // Race simulation - steady state at race power (Tempo/Sweet Spot)
+        const warmupDistance = Math.min(10000, Math.round(totalDistance * 0.1));  // 10km or 10%
+        const cooldownDistance = Math.min(5000, Math.round(totalDistance * 0.05));  // 5km or 5%
+        const mainDistance = totalDistance - warmupDistance - cooldownDistance;
+
+        // Warmup at Z2
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: warmupDistance,
+            ...z2Power,
+            ...normalCadence
+        });
+
+        // Main set at race power (Z3 Tempo for half-distance simulation)
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: mainDistance,
+            ...z3Power,
+            ...normalCadence
+        });
+
+        // Cooldown at Z1
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: cooldownDistance,
+            ...z1Power
+        });
+
+    } else if (ssMatch) {
         // Sweet Spot workout with actual power values
         const reps = parseInt(ssMatch[1]);
         const minutes = parseInt(ssMatch[2]);

@@ -453,6 +453,7 @@ const POWER_ZONES = {
 // Run Pace Zones (based on Marathon Pace)
 // Slower = higher multiplier (more seconds per km)
 const RUN_PACE_ZONES = {
+    RECOVERY: 1.50,    // +50% time = 405s/km = 6:45/km (very easy recovery)
     EASY: 1.15,        // +15% time = 310.5s/km = 5:10/km
     LONG: 1.10,        // +10% time = 297s/km = 4:57/km
     MARATHON: 1.00,    // MP = 270s/km = 4:30/km
@@ -494,6 +495,27 @@ function getRunPaceTarget(zone) {
         targetValueOne: runPaceToSpeed(slowPace),  // slower pace = lower m/s
         targetValueTwo: runPaceToSpeed(fastPace)   // faster pace = higher m/s
     };
+}
+
+// Get run pace target from specific pace in seconds (e.g., 400 for 6:40/km)
+function getRunPaceFromSeconds(paceSeconds, variancePercent = 5) {
+    const fastPace = paceSeconds * (1 - variancePercent / 100);
+    const slowPace = paceSeconds * (1 + variancePercent / 100);
+    return {
+        targetType: { workoutTargetTypeId: 5, workoutTargetTypeKey: 'speed.zone' },
+        targetValueOne: runPaceToSpeed(slowPace),  // slower pace = lower m/s
+        targetValueTwo: runPaceToSpeed(fastPace)   // faster pace = higher m/s
+    };
+}
+
+// Parse pace from content like "@ 6:40/km" and return target object
+function parseRunPaceFromContent(content) {
+    const paceMatch = content.match(/@\s*(\d+):(\d+)\/km/);
+    if (paceMatch) {
+        const paceSeconds = parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2]);
+        return getRunPaceFromSeconds(paceSeconds);
+    }
+    return null;
 }
 
 // Convert swim pace (seconds/100m) to speed (m/s) for Garmin API
@@ -1223,8 +1245,8 @@ function generateRunSteps(totalDistance, content) {
     const intervalKmMatch = content.match(/(\d+)\s*[xX×]\s*([\d.]+)\s*km/i);
     const intervalMMatch = content.match(/(\d+)\s*[xX×]\s*(\d+)\s*m(?!\w)/i);
 
-    // Try to parse target pace from content like "@ 4:45/km"
-    const paceMatch = content.match(/@\s*(\d+):(\d+)\/km/);
+    // Try to parse target pace from content like "@ 4:45/km" or "@ 6:40/km"
+    const contentPace = parseRunPaceFromContent(content);
 
     // Get pace targets with actual speed values
     const easyPace = getRunPaceTarget('EASY');           // ~5:10/km = 3.22 m/s
@@ -1233,7 +1255,7 @@ function generateRunSteps(totalDistance, content) {
     const tempoPace = getRunPaceTarget('TEMPO');         // ~4:16/km = 3.90 m/s
     const thresholdPace = getRunPaceTarget('THRESHOLD'); // ~4:08/km = 4.03 m/s
     const intervalPace = getRunPaceTarget('INTERVAL');   // ~3:49/km = 4.36 m/s
-    const recoveryPace = getRunPaceTarget('EASY');       // Recovery jog
+    const recoveryPace = getRunPaceTarget('RECOVERY');   // ~6:45/km = 2.47 m/s
 
     // Calculate rest time based on interval distance
     function getRestTime(distanceMeters) {
@@ -1256,17 +1278,8 @@ function generateRunSteps(totalDistance, content) {
         }
         const restTime = getRestTime(intervalDistance);
 
-        // Determine interval pace zone based on content or default
-        let intervalTarget = intervalPace;
-        if (paceMatch) {
-            const targetPaceSec = parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2]);
-            const mpRatio = targetPaceSec / TRAINING_PARAMS.MARATHON_PACE_SEC;
-            if (mpRatio >= 1.10) intervalTarget = easyPace;
-            else if (mpRatio >= 1.00) intervalTarget = marathonPace;
-            else if (mpRatio >= 0.93) intervalTarget = tempoPace;
-            else if (mpRatio >= 0.88) intervalTarget = thresholdPace;
-            else intervalTarget = intervalPace;
-        }
+        // Use specific pace from content if provided, otherwise use interval zone
+        let intervalTarget = contentPace || intervalPace;
 
         // Warmup with strides
         steps.push({
@@ -1484,31 +1497,33 @@ function generateRunSteps(totalDistance, content) {
         });
 
     } else if (isRecovery) {
-        // Recovery/easy run
+        // Recovery/easy run - use specific pace from content if provided
+        const targetPace = contentPace || recoveryPace;
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: Math.round(totalDistance * 0.1),
-            ...easyPace
+            ...targetPace
         });
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: Math.round(totalDistance * 0.8),
-            ...easyPace
+            ...targetPace
         });
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: Math.round(totalDistance * 0.1),
-            ...easyPace
+            ...targetPace
         });
 
     } else {
-        // Default: easy run with pace target
+        // Default: easy run with pace target - use specific pace from content if provided
+        const targetPace = contentPace || easyPace;
         const warmupDistance = Math.round(totalDistance * 0.1);
         const mainDistance = Math.round(totalDistance * 0.8);
         const cooldownDistance = totalDistance - warmupDistance - mainDistance;
@@ -1518,21 +1533,21 @@ function generateRunSteps(totalDistance, content) {
             stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: warmupDistance,
-            ...easyPace
+            ...targetPace
         });
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: mainDistance,
-            ...easyPace
+            ...targetPace
         });
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: cooldownDistance,
-            ...easyPace
+            ...targetPace
         });
     }
 

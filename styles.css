@@ -2546,6 +2546,7 @@ body {
 
 .json-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-top: 10px;
 }
@@ -2580,6 +2581,22 @@ body {
 
 .btn-download:hover {
     background: #d48f1d;
+}
+
+.btn-zwo {
+    background: #f26722;
+}
+
+.btn-zwo:hover {
+    background: #d45a1c;
+}
+
+.btn-erg {
+    background: #2c5282;
+}
+
+.btn-erg:hover {
+    background: #234571;
 }
 
 .modal-footer {

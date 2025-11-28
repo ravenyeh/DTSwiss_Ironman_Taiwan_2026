@@ -2623,6 +2623,14 @@ body {
     background: #234571;
 }
 
+.btn-json {
+    background: #4a5568;
+}
+
+.btn-json:hover {
+    background: #2d3748;
+}
+
 .modal-footer {
     margin-top: 20px;
     padding-top: 20px;

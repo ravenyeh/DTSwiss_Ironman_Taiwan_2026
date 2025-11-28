@@ -1589,6 +1589,8 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
 
             const escapedName = workout.data.workoutName.replace(/'/g, "\\'").replace(/"/g, '\\"');
             const isBike = workout.type === 'bike';
+            // Store workout data for download functions
+            window[`workoutData_${idx}`] = workout.data;
             html += `
                 <div class="workout-section" style="border-left: 4px solid ${typeColor}">
                     <div class="workout-header">
@@ -1602,14 +1604,7 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
                         <span>預估時間: ${Math.round(workout.data.estimatedDurationInSecs / 60)} 分鐘</span>
                     </div>
                     <div class="workout-actions-row">
-                        <details class="workout-json-details">
-                            <summary>查看 JSON</summary>
-                            <textarea class="workout-json" id="workout-json-${idx}" rows="12">${JSON.stringify(workout.data, null, 2)}</textarea>
-                            <div class="json-actions">
-                                <button class="btn-copy" onclick="copyWorkoutJson(${idx}, this)">複製 JSON</button>
-                                <button class="btn-download" onclick="downloadWorkoutJson(${idx}, '${escapedName}')">下載 .json</button>
-                            </div>
-                        </details>
+                        <button class="btn-trainer btn-json" onclick="downloadWorkoutJson(${idx}, '${escapedName}')">下載 JSON</button>
                         ${isBike ? `<button class="btn-trainer btn-zwo" onclick="downloadWorkoutZWO(${idx}, '${escapedName}')">下載 ZWO</button>
                         <button class="btn-trainer btn-erg" onclick="downloadWorkoutERG(${idx}, '${escapedName}')">下載 ERG</button>` : ''}
                     </div>
@@ -1668,8 +1663,9 @@ function copyWorkoutJson(idx, btn) {
 
 // Download workout JSON as file
 function downloadWorkoutJson(idx, filename) {
-    const textarea = document.getElementById(`workout-json-${idx}`);
-    const json = textarea.value;
+    const workout = window[`workoutData_${idx}`];
+    if (!workout) return;
+    const json = JSON.stringify(workout, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1892,8 +1888,8 @@ MINUTES WATTS
 
 // Download workout as ZWO file
 function downloadWorkoutZWO(idx, filename) {
-    const textarea = document.getElementById(`workout-json-${idx}`);
-    const workout = JSON.parse(textarea.value);
+    const workout = window[`workoutData_${idx}`];
+    if (!workout) return;
     const zwo = convertToZWO(workout);
     const blob = new Blob([zwo], { type: 'application/xml' });
     const url = URL.createObjectURL(blob);
@@ -1908,8 +1904,8 @@ function downloadWorkoutZWO(idx, filename) {
 
 // Download workout as ERG file
 function downloadWorkoutERG(idx, filename) {
-    const textarea = document.getElementById(`workout-json-${idx}`);
-    const workout = JSON.parse(textarea.value);
+    const workout = window[`workoutData_${idx}`];
+    if (!workout) return;
     const erg = convertToERG(workout);
     const blob = new Blob([erg], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);

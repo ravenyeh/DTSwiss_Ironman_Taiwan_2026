@@ -541,6 +541,29 @@ function parseStructuredLongRun(content) {
     return null;
 }
 
+// Parse structured workout with warmup/main/cooldown like "(熱身3km + 5km @ 5:30/km + 緩和2km)"
+function parseStructuredWorkout(content) {
+    // Pattern: 熱身Xkm + Ykm @ pace + 緩和Zkm
+    const warmupMatch = content.match(/熱身\s*([\d.]+)\s*km/i);
+    const mainMatch = content.match(/[\+\s]\s*([\d.]+)\s*km\s*@\s*(\d+):(\d+)\/km/i);
+    const cooldownMatch = content.match(/緩和\s*([\d.]+)\s*km/i);
+
+    if (warmupMatch && mainMatch && cooldownMatch) {
+        const warmupKm = parseFloat(warmupMatch[1]);
+        const mainKm = parseFloat(mainMatch[1]);
+        const mainPaceSec = parseInt(mainMatch[2]) * 60 + parseInt(mainMatch[3]);
+        const cooldownKm = parseFloat(cooldownMatch[1]);
+
+        return {
+            warmupDistance: warmupKm * 1000,
+            mainDistance: mainKm * 1000,
+            mainPace: getRunPaceFromSeconds(mainPaceSec),
+            cooldownDistance: cooldownKm * 1000
+        };
+    }
+    return null;
+}
+
 // Convert swim pace (seconds/100m) to speed (m/s) for Garmin API
 function swimPaceToSpeed(paceSecondsPer100m) {
     return 100 / paceSecondsPer100m;
@@ -1406,60 +1429,66 @@ function generateRunSteps(totalDistance, content) {
         });
 
     } else if (isTempo) {
-        // Tempo/Threshold run
-        const warmupDistance = 2000;
-        const cooldownDistance = 2000;
-        const tempoDistance = totalDistance - warmupDistance - cooldownDistance;
+        // Try to parse structured tempo workout first
+        const structuredWorkout = parseStructuredWorkout(content);
 
-        // Warmup
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: warmupDistance,
-            ...easyPace
-        });
+        if (structuredWorkout) {
+            // Use exact distances and pace from description
+            // e.g., "(熱身3km + 5km @ 5:30/km + 緩和2km)"
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: structuredWorkout.warmupDistance,
+                ...easyPace
+            });
 
-        // Drills (3x100m)
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
-            numberOfIterations: 3,
-            workoutSteps: [
-                {
-                    stepOrder: 1,
-                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
-                    endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-                    endConditionValue: 100,
-                    targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
-                },
-                {
-                    stepOrder: 2,
-                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
-                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
-                    endConditionValue: 30,
-                    targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
-                }
-            ]
-        });
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: structuredWorkout.mainDistance,
+                ...structuredWorkout.mainPace
+            });
 
-        // Tempo segment
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: tempoDistance - 300,  // Minus drills
-            ...tempoPace
-        });
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: structuredWorkout.cooldownDistance,
+                ...easyPace
+            });
 
-        // Cooldown
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: cooldownDistance,
-            ...easyPace
-        });
+        } else {
+            // Default tempo run structure
+            const warmupDistance = 2000;
+            const cooldownDistance = 2000;
+            const tempoDistance = totalDistance - warmupDistance - cooldownDistance;
+
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: warmupDistance,
+                ...easyPace
+            });
+
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: tempoDistance,
+                ...tempoPace
+            });
+
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: cooldownDistance,
+                ...easyPace
+            });
+        }
 
     } else if (isBrick) {
         // Brick run (post-bike transition run)

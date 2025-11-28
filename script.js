@@ -428,6 +428,123 @@ function updateCountdown() {
 updateCountdown();
 setInterval(updateCountdown, 1000);
 
+// ===========================================
+// Training Parameters (固定訓練參數)
+// ===========================================
+const TRAINING_PARAMS = {
+    // Cycling: FTP 190W
+    FTP: 190,
+    // Running: Marathon Pace 4:30/km = 270 seconds/km
+    MARATHON_PACE_SEC: 270,
+    // Swimming: CSS 2:30/100m = 150 seconds/100m
+    CSS_SEC: 150
+};
+
+// Power Zones (based on FTP)
+const POWER_ZONES = {
+    Z1: { min: 0.45, max: 0.55, name: 'Recovery' },      // 86-105W
+    Z2: { min: 0.55, max: 0.75, name: 'Endurance' },     // 105-143W
+    Z3: { min: 0.75, max: 0.88, name: 'Tempo' },         // 143-167W
+    SS: { min: 0.88, max: 0.94, name: 'Sweet Spot' },    // 167-179W
+    Z4: { min: 0.94, max: 1.05, name: 'Threshold' },     // 179-200W
+    Z5: { min: 1.05, max: 1.20, name: 'VO2max' }         // 200-228W
+};
+
+// Run Pace Zones (based on Marathon Pace)
+// Slower = higher multiplier (more seconds per km)
+const RUN_PACE_ZONES = {
+    EASY: 1.15,        // +15% time = 310.5s/km = 5:10/km
+    LONG: 1.10,        // +10% time = 297s/km = 4:57/km
+    MARATHON: 1.00,    // MP = 270s/km = 4:30/km
+    TEMPO: 0.95,       // -5% time = 256.5s/km = 4:16/km
+    THRESHOLD: 0.92,   // -8% time = 248.4s/km = 4:08/km
+    INTERVAL: 0.85,    // -15% time = 229.5s/km = 3:49/km
+    REP: 0.80          // -20% time = 216s/km = 3:36/km
+};
+
+// Swim Pace Zones (based on CSS)
+// Slower = higher multiplier (more seconds per 100m)
+const SWIM_PACE_ZONES = {
+    RECOVERY: 1.20,    // +20% = 180s/100m = 3:00/100m
+    EASY: 1.10,        // +10% = 165s/100m = 2:45/100m
+    AEROBIC: 1.05,     // +5% = 157.5s/100m = 2:37/100m
+    CSS: 1.00,         // CSS = 150s/100m = 2:30/100m
+    THRESHOLD: 0.95,   // -5% = 142.5s/100m = 2:22/100m
+    SPRINT: 0.90       // -10% = 135s/100m = 2:15/100m
+};
+
+// ===========================================
+// Pace/Power Calculation Helpers
+// ===========================================
+
+// Convert run pace (seconds/km) to speed (m/s) for Garmin API
+function runPaceToSpeed(paceSecondsPerKm) {
+    return 1000 / paceSecondsPerKm;
+}
+
+// Get run pace target object for Garmin API
+function getRunPaceTarget(zone) {
+    const multiplier = RUN_PACE_ZONES[zone] || RUN_PACE_ZONES.EASY;
+    const paceSeconds = TRAINING_PARAMS.MARATHON_PACE_SEC * multiplier;
+    // Allow ±5% variance
+    const fastPace = paceSeconds * 0.95;
+    const slowPace = paceSeconds * 1.05;
+    return {
+        targetType: { workoutTargetTypeId: 5, workoutTargetTypeKey: 'speed.zone' },
+        targetValueOne: runPaceToSpeed(slowPace),  // slower pace = lower m/s
+        targetValueTwo: runPaceToSpeed(fastPace)   // faster pace = higher m/s
+    };
+}
+
+// Convert swim pace (seconds/100m) to speed (m/s) for Garmin API
+function swimPaceToSpeed(paceSecondsPer100m) {
+    return 100 / paceSecondsPer100m;
+}
+
+// Get swim pace target object for Garmin API
+function getSwimPaceTarget(zone) {
+    const multiplier = SWIM_PACE_ZONES[zone] || SWIM_PACE_ZONES.CSS;
+    const paceSeconds = TRAINING_PARAMS.CSS_SEC * multiplier;
+    // Allow ±3% variance for swim
+    const fastPace = paceSeconds * 0.97;
+    const slowPace = paceSeconds * 1.03;
+    return {
+        targetType: { workoutTargetTypeId: 5, workoutTargetTypeKey: 'speed.zone' },
+        targetValueOne: swimPaceToSpeed(slowPace),  // slower pace = lower m/s
+        targetValueTwo: swimPaceToSpeed(fastPace)   // faster pace = higher m/s
+    };
+}
+
+// Get power target object for Garmin API
+function getPowerTarget(zone) {
+    const zoneData = POWER_ZONES[zone] || POWER_ZONES.Z2;
+    const minWatts = Math.round(TRAINING_PARAMS.FTP * zoneData.min);
+    const maxWatts = Math.round(TRAINING_PARAMS.FTP * zoneData.max);
+    return {
+        targetType: { workoutTargetTypeId: 2, workoutTargetTypeKey: 'power.zone' },
+        targetValueOne: minWatts,
+        targetValueTwo: maxWatts
+    };
+}
+
+// Get cadence secondary target for cycling
+function getCadenceTarget(minRpm, maxRpm) {
+    return {
+        secondaryTargetType: { workoutTargetTypeId: 3, workoutTargetTypeKey: 'cadence.zone' },
+        secondaryTargetValueOne: minRpm,
+        secondaryTargetValueTwo: maxRpm
+    };
+}
+
+// Parse pace string like "2:30/100m" or "4:30/km" to seconds
+function parsePaceString(paceStr) {
+    const match = paceStr.match(/(\d+):(\d+)/);
+    if (match) {
+        return parseInt(match[1]) * 60 + parseInt(match[2]);
+    }
+    return null;
+}
+
 // Convert training data to Garmin Workout JSON format
 function convertToGarminWorkout(training, index, overrideDate = null) {
     const workouts = [];
@@ -541,14 +658,21 @@ function formatStep(step) {
         childStepId: null,
         stepType: step.stepType,
         targetType: step.targetType || { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' },
-        targetValueOne: null,
-        targetValueTwo: null
+        targetValueOne: step.targetValueOne !== undefined ? step.targetValueOne : null,
+        targetValueTwo: step.targetValueTwo !== undefined ? step.targetValueTwo : null
     };
 
     // Add endCondition for non-repeat steps
     if (step.endCondition) {
         formattedStep.endCondition = step.endCondition;
         formattedStep.endConditionValue = step.endConditionValue;
+    }
+
+    // Add secondary target (e.g., cadence for cycling)
+    if (step.secondaryTargetType) {
+        formattedStep.secondaryTargetType = step.secondaryTargetType;
+        formattedStep.secondaryTargetValueOne = step.secondaryTargetValueOne !== undefined ? step.secondaryTargetValueOne : null;
+        formattedStep.secondaryTargetValueTwo = step.secondaryTargetValueTwo !== undefined ? step.secondaryTargetValueTwo : null;
     }
 
     // Handle repeat steps with nested workoutSteps
@@ -570,13 +694,59 @@ function generateSwimSteps(totalDistance, content) {
     const steps = [];
     let stepOrder = 1;
 
-    // Check for intervals pattern like "6x400m" or "10x200m"
-    const intervalMatch = content.match(/(\d+)\s*[xX×]\s*(\d+)m/);
+    // Determine workout type from content
+    const isRecovery = content.includes('恢復') || content.includes('輕鬆');
+    const isTechnical = content.includes('技術') || content.includes('划頻') || content.includes('踢水');
+    const isTest = content.includes('測試') || content.includes('目標配速');
+
+    // Check for intervals pattern like "6x400m", "10x200m", "8x300m"
+    const intervalMatch = content.match(/(\d+)\s*[xX×]\s*(\d+)\s*m/i);
+
+    // Try to parse target pace from content like "@ 2:35/100m"
+    const paceMatch = content.match(/@\s*(\d+):(\d+)\/100m/);
+    let targetPaceZone = 'CSS';  // Default to CSS pace
+    if (paceMatch) {
+        const targetPace = parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2]);
+        // Determine zone based on target pace vs CSS
+        const cssRatio = targetPace / TRAINING_PARAMS.CSS_SEC;
+        if (cssRatio >= 1.15) targetPaceZone = 'RECOVERY';
+        else if (cssRatio >= 1.08) targetPaceZone = 'EASY';
+        else if (cssRatio >= 1.02) targetPaceZone = 'AEROBIC';
+        else if (cssRatio >= 0.97) targetPaceZone = 'CSS';
+        else if (cssRatio >= 0.92) targetPaceZone = 'THRESHOLD';
+        else targetPaceZone = 'SPRINT';
+    }
+
+    // Get pace targets
+    const warmupPace = getSwimPaceTarget('EASY');
+    const mainPace = getSwimPaceTarget(targetPaceZone);
+    const recoveryPace = getSwimPaceTarget('RECOVERY');
+
+    // Calculate rest time based on interval distance
+    function getRestTime(distance) {
+        if (distance <= 100) return 15;
+        if (distance <= 200) return 30;
+        if (distance <= 300) return 40;
+        if (distance <= 400) return 45;
+        return 60;
+    }
 
     if (intervalMatch) {
+        // Interval workout
         const reps = parseInt(intervalMatch[1]);
         const distance = parseInt(intervalMatch[2]);
-        const warmupDistance = Math.round((totalDistance - reps * distance) / 2);
+        const mainSetDistance = reps * distance;
+        const restTime = getRestTime(distance);
+
+        // Calculate warmup/cooldown (remaining distance split)
+        let warmupDistance = Math.round((totalDistance - mainSetDistance) / 2);
+        let cooldownDistance = totalDistance - mainSetDistance - warmupDistance;
+
+        // Ensure minimum warmup of 300m
+        if (warmupDistance < 300 && totalDistance > mainSetDistance + 300) {
+            warmupDistance = 300;
+            cooldownDistance = totalDistance - mainSetDistance - warmupDistance;
+        }
 
         // Warmup
         if (warmupDistance > 0) {
@@ -585,11 +755,11 @@ function generateSwimSteps(totalDistance, content) {
                 stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
                 endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
                 endConditionValue: warmupDistance,
-                targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+                ...warmupPace
             });
         }
 
-        // Interval repeat
+        // Main set - Interval repeats
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
@@ -600,6 +770,594 @@ function generateSwimSteps(totalDistance, content) {
                     stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
                     endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
                     endConditionValue: distance,
+                    ...mainPace
+                },
+                {
+                    stepOrder: 2,
+                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: restTime,
+                    targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+                }
+            ]
+        });
+
+        // Cooldown
+        if (cooldownDistance > 0) {
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: cooldownDistance,
+                ...recoveryPace
+            });
+        }
+
+    } else if (isTechnical) {
+        // Technical session: warmup + drills + technique + cooldown
+        const warmupDistance = Math.round(totalDistance * 0.2);
+        const drillDistance = Math.round(totalDistance * 0.4);
+        const techniqueDistance = Math.round(totalDistance * 0.25);
+        const cooldownDistance = totalDistance - warmupDistance - drillDistance - techniqueDistance;
+
+        // Warmup
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: warmupDistance,
+            ...warmupPace
+        });
+
+        // Drill set (4x repeats)
+        const drillReps = 4;
+        const drillPerRep = Math.round(drillDistance / drillReps);
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
+            numberOfIterations: drillReps,
+            workoutSteps: [
+                {
+                    stepOrder: 1,
+                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                    endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                    endConditionValue: drillPerRep,
+                    targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+                },
+                {
+                    stepOrder: 2,
+                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: 20,
+                    targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+                }
+            ]
+        });
+
+        // Technique swim at aerobic pace
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: techniqueDistance,
+            ...getSwimPaceTarget('AEROBIC')
+        });
+
+        // Cooldown
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: cooldownDistance,
+            ...recoveryPace
+        });
+
+    } else if (isRecovery) {
+        // Recovery swim: easy pace throughout
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.15),
+            ...recoveryPace
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.7),
+            ...recoveryPace
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.15),
+            ...recoveryPace
+        });
+
+    } else {
+        // Default: steady swim at aerobic pace
+        const warmupDistance = Math.round(totalDistance * 0.2);
+        const mainDistance = Math.round(totalDistance * 0.6);
+        const cooldownDistance = totalDistance - warmupDistance - mainDistance;
+
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: warmupDistance,
+            ...warmupPace
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: mainDistance,
+            ...getSwimPaceTarget('AEROBIC')
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: cooldownDistance,
+            ...recoveryPace
+        });
+    }
+
+    return steps;
+}
+
+// Generate bike workout steps
+function generateBikeSteps(totalDistance, content) {
+    const steps = [];
+    let stepOrder = 1;
+
+    // Determine workout type from content
+    const isRecovery = content.includes('恢復') || content.includes('輕鬆');
+    const isLongRide = totalDistance >= 100000 || content.includes('長距離');
+    const hasBrick = content.includes('磚式') || content.includes('接續跑');
+    const hasFTP = content.includes('FTP') || content.includes('測試');
+    const hasClimb = content.includes('爬坡');
+
+    // Check for Sweet Spot intervals: "3x20分鐘 @ Sweet Spot", "4x15分鐘 @ Sweet Spot"
+    const ssMatch = content.match(/(\d+)\s*[xX×]\s*(\d+)\s*分鐘.*Sweet\s*Spot/i);
+
+    // Check for FTP/threshold intervals: "2x20分鐘 @ FTP"
+    const ftpMatch = content.match(/(\d+)\s*[xX×]\s*(\d+)\s*分鐘.*(?:FTP|閾值)/i);
+
+    // Get power targets
+    const z1Power = getPowerTarget('Z1');  // Recovery: 86-105W
+    const z2Power = getPowerTarget('Z2');  // Endurance: 105-143W
+    const z3Power = getPowerTarget('Z3');  // Tempo: 143-167W
+    const ssPower = getPowerTarget('SS');  // Sweet Spot: 167-179W
+    const z4Power = getPowerTarget('Z4');  // Threshold: 179-200W
+
+    // Get cadence targets
+    const normalCadence = getCadenceTarget(85, 95);
+    const highCadence = getCadenceTarget(95, 105);
+
+    if (ssMatch) {
+        // Sweet Spot workout with actual power values
+        const reps = parseInt(ssMatch[1]);
+        const minutes = parseInt(ssMatch[2]);
+        const warmupDistance = Math.round(totalDistance * 0.15);
+
+        // Warmup at Z2 with activation spin-ups
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: warmupDistance,
+            ...z2Power,
+            ...normalCadence
+        });
+
+        // Activation spin-ups (3x1min high cadence)
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
+            numberOfIterations: 3,
+            workoutSteps: [
+                {
+                    stepOrder: 1,
+                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: 60,
+                    ...z3Power,
+                    ...highCadence
+                },
+                {
+                    stepOrder: 2,
+                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: 60,
+                    ...z1Power
+                }
+            ]
+        });
+
+        // Sweet Spot intervals with actual power values (167-179W for FTP 190)
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
+            numberOfIterations: reps,
+            workoutSteps: [
+                {
+                    stepOrder: 1,
+                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: minutes * 60,
+                    ...ssPower,
+                    ...normalCadence
+                },
+                {
+                    stepOrder: 2,
+                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: 300,  // 5 min recovery
+                    ...z1Power
+                }
+            ]
+        });
+
+        // Cooldown
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 1, conditionTypeKey: 'lap.button' },
+            ...z1Power,
+            ...normalCadence
+        });
+
+    } else if (ftpMatch || hasFTP) {
+        // FTP/Threshold workout
+        const reps = ftpMatch ? parseInt(ftpMatch[1]) : 2;
+        const minutes = ftpMatch ? parseInt(ftpMatch[2]) : 20;
+        const warmupDistance = Math.round(totalDistance * 0.15);
+
+        // Warmup
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: warmupDistance,
+            ...z2Power,
+            ...normalCadence
+        });
+
+        // Build-ups
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
+            numberOfIterations: 3,
+            workoutSteps: [
+                {
+                    stepOrder: 1,
+                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: 30,
+                    ...z4Power,
+                    ...highCadence
+                },
+                {
+                    stepOrder: 2,
+                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: 90,
+                    ...z1Power
+                }
+            ]
+        });
+
+        // FTP intervals at threshold power (179-200W)
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
+            numberOfIterations: reps,
+            workoutSteps: [
+                {
+                    stepOrder: 1,
+                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: minutes * 60,
+                    ...z4Power,
+                    ...normalCadence
+                },
+                {
+                    stepOrder: 2,
+                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: 600,  // 10 min recovery
+                    ...z1Power
+                }
+            ]
+        });
+
+        // Cooldown
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 1, conditionTypeKey: 'lap.button' },
+            ...z1Power
+        });
+
+    } else if (isLongRide) {
+        // Long endurance ride at Z2 with tempo surges
+        const warmupDistance = 10000;  // 10km warmup
+        const cooldownDistance = 5000;  // 5km cooldown
+        const mainDistance = totalDistance - warmupDistance - cooldownDistance;
+
+        // Warmup
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: warmupDistance,
+            ...z2Power,
+            ...normalCadence
+        });
+
+        // Main set: Z2 blocks with tempo surges every ~30km
+        const numBlocks = Math.max(1, Math.floor(mainDistance / 30000));
+        const blockDistance = Math.round(mainDistance / numBlocks);
+
+        if (numBlocks > 1) {
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
+                numberOfIterations: numBlocks,
+                workoutSteps: [
+                    {
+                        stepOrder: 1,
+                        stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                        endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                        endConditionValue: blockDistance - 3000,  // Main Z2 portion
+                        ...z2Power,
+                        ...normalCadence
+                    },
+                    {
+                        stepOrder: 2,
+                        stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                        endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                        endConditionValue: 3000,  // 3km tempo surge
+                        ...z3Power,
+                        ...normalCadence
+                    }
+                ]
+            });
+        } else {
+            // Single main set for shorter "long" rides
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: mainDistance,
+                ...z2Power,
+                ...normalCadence
+            });
+        }
+
+        // Cooldown
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: cooldownDistance,
+            ...z1Power
+        });
+
+    } else if (isRecovery) {
+        // Recovery ride at Z1
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.1),
+            ...z1Power,
+            ...highCadence
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.8),
+            ...z1Power,
+            ...highCadence
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: Math.round(totalDistance * 0.1),
+            ...z1Power
+        });
+
+    } else {
+        // Default: Z2 endurance ride with power targets
+        const warmupDistance = Math.round(totalDistance * 0.1);
+        const mainDistance = Math.round(totalDistance * 0.8);
+        const cooldownDistance = totalDistance - warmupDistance - mainDistance;
+
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: warmupDistance,
+            ...z2Power,
+            ...normalCadence
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: mainDistance,
+            ...z2Power,
+            ...normalCadence
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: cooldownDistance,
+            ...z1Power
+        });
+    }
+
+    return steps;
+}
+
+// Generate run workout steps
+function generateRunSteps(totalDistance, content) {
+    const steps = [];
+    let stepOrder = 1;
+
+    // Determine workout type from content
+    const isRecovery = content.includes('恢復') || content.includes('輕鬆');
+    const isLongRun = totalDistance >= 15000 || content.includes('長跑');
+    const isBrick = content.includes('磚式') || content.includes('接續跑') || content.includes('轉換');
+    const isTempo = content.includes('節奏跑') || content.includes('T配速');
+    const hasProgressive = content.includes('漸進') || content.includes('M配速') || content.includes('前');
+
+    // Check for interval pattern like "8x1km", "6x1.2km", "8x400m"
+    const intervalKmMatch = content.match(/(\d+)\s*[xX×]\s*([\d.]+)\s*km/i);
+    const intervalMMatch = content.match(/(\d+)\s*[xX×]\s*(\d+)\s*m(?!\w)/i);
+
+    // Try to parse target pace from content like "@ 4:45/km"
+    const paceMatch = content.match(/@\s*(\d+):(\d+)\/km/);
+
+    // Get pace targets with actual speed values
+    const easyPace = getRunPaceTarget('EASY');           // ~5:10/km = 3.22 m/s
+    const longPace = getRunPaceTarget('LONG');           // ~4:57/km = 3.37 m/s
+    const marathonPace = getRunPaceTarget('MARATHON');   // 4:30/km = 3.70 m/s
+    const tempoPace = getRunPaceTarget('TEMPO');         // ~4:16/km = 3.90 m/s
+    const thresholdPace = getRunPaceTarget('THRESHOLD'); // ~4:08/km = 4.03 m/s
+    const intervalPace = getRunPaceTarget('INTERVAL');   // ~3:49/km = 4.36 m/s
+    const recoveryPace = getRunPaceTarget('EASY');       // Recovery jog
+
+    // Calculate rest time based on interval distance
+    function getRestTime(distanceMeters) {
+        if (distanceMeters <= 400) return 60;
+        if (distanceMeters <= 800) return 90;
+        if (distanceMeters <= 1000) return 90;
+        if (distanceMeters <= 1200) return 120;
+        return 120;
+    }
+
+    if (intervalKmMatch || intervalMMatch) {
+        // Interval workout
+        let reps, intervalDistance;
+        if (intervalKmMatch) {
+            reps = parseInt(intervalKmMatch[1]);
+            intervalDistance = parseFloat(intervalKmMatch[2]) * 1000;
+        } else {
+            reps = parseInt(intervalMMatch[1]);
+            intervalDistance = parseInt(intervalMMatch[2]);
+        }
+        const restTime = getRestTime(intervalDistance);
+
+        // Determine interval pace zone based on content or default
+        let intervalTarget = intervalPace;
+        if (paceMatch) {
+            const targetPaceSec = parseInt(paceMatch[1]) * 60 + parseInt(paceMatch[2]);
+            const mpRatio = targetPaceSec / TRAINING_PARAMS.MARATHON_PACE_SEC;
+            if (mpRatio >= 1.10) intervalTarget = easyPace;
+            else if (mpRatio >= 1.00) intervalTarget = marathonPace;
+            else if (mpRatio >= 0.93) intervalTarget = tempoPace;
+            else if (mpRatio >= 0.88) intervalTarget = thresholdPace;
+            else intervalTarget = intervalPace;
+        }
+
+        // Warmup with strides
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: 2000,
+            ...easyPace
+        });
+
+        // Strides (4x100m)
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
+            numberOfIterations: 4,
+            workoutSteps: [
+                {
+                    stepOrder: 1,
+                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                    endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                    endConditionValue: 100,
+                    ...getRunPaceTarget('REP')
+                },
+                {
+                    stepOrder: 2,
+                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                    endConditionValue: 100,
+                    targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+                }
+            ]
+        });
+
+        // Main intervals
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
+            numberOfIterations: reps,
+            workoutSteps: [
+                {
+                    stepOrder: 1,
+                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                    endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                    endConditionValue: intervalDistance,
+                    ...intervalTarget
+                },
+                {
+                    stepOrder: 2,
+                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
+                    endConditionValue: restTime,
+                    targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+                }
+            ]
+        });
+
+        // Cooldown
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: 2000,
+            ...easyPace
+        });
+
+    } else if (isTempo) {
+        // Tempo/Threshold run
+        const warmupDistance = 2000;
+        const cooldownDistance = 2000;
+        const tempoDistance = totalDistance - warmupDistance - cooldownDistance;
+
+        // Warmup
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: warmupDistance,
+            ...easyPace
+        });
+
+        // Drills (3x100m)
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
+            numberOfIterations: 3,
+            workoutSteps: [
+                {
+                    stepOrder: 1,
+                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                    endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                    endConditionValue: 100,
                     targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
                 },
                 {
@@ -612,171 +1370,80 @@ function generateSwimSteps(totalDistance, content) {
             ]
         });
 
-        // Cooldown
-        if (warmupDistance > 0) {
-            steps.push({
-                stepOrder: stepOrder++,
-                stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
-                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-                endConditionValue: warmupDistance,
-                targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
-            });
-        }
-    } else {
-        // Simple distance swim
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: Math.round(totalDistance * 0.2),
-            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
-        });
+        // Tempo segment
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: Math.round(totalDistance * 0.6),
-            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
-        });
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: Math.round(totalDistance * 0.2),
-            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
-        });
-    }
-
-    return steps;
-}
-
-// Generate bike workout steps
-function generateBikeSteps(totalDistance, content) {
-    const steps = [];
-    let stepOrder = 1;
-
-    // Check for Sweet Spot intervals
-    const ssMatch = content.match(/(\d+)\s*[xX×]\s*(\d+)\s*分鐘.*Sweet\s*Spot/i);
-
-    if (ssMatch) {
-        const reps = parseInt(ssMatch[1]);
-        const minutes = parseInt(ssMatch[2]);
-
-        // Warmup - 20% of total
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: Math.round(totalDistance * 0.15),
-            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
-        });
-
-        // Sweet Spot intervals
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
-            numberOfIterations: reps,
-            workoutSteps: [
-                {
-                    stepOrder: 1,
-                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
-                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
-                    endConditionValue: minutes * 60,
-                    targetType: { workoutTargetTypeId: 6, workoutTargetTypeKey: 'power.zone' },
-                    targetValueOne: 88,
-                    targetValueTwo: 94,
-                    zoneNumber: 4
-                },
-                {
-                    stepOrder: 2,
-                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
-                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
-                    endConditionValue: 300,
-                    targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
-                }
-            ]
+            endConditionValue: tempoDistance - 300,  // Minus drills
+            ...tempoPace
         });
 
         // Cooldown
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
-            endCondition: { conditionTypeId: 1, conditionTypeKey: 'lap.button' },
-            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: cooldownDistance,
+            ...easyPace
         });
-    } else {
-        // Simple distance ride (Z2)
+
+    } else if (isBrick) {
+        // Brick run (post-bike transition run)
+        // Conservative start, then build to race pace
+        const transitionDistance = 1000;  // First km conservative
+        const mainDistance = totalDistance - transitionDistance;
+
+        // Transition/conservative start
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: Math.round(totalDistance * 0.1),
-            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+            endConditionValue: transitionDistance,
+            ...longPace  // Conservative pace for transition
         });
+
+        // Main run at race pace
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: Math.round(totalDistance * 0.8),
-            targetType: { workoutTargetTypeId: 4, workoutTargetTypeKey: 'heart.rate.zone' },
-            zoneNumber: 2
+            endConditionValue: mainDistance,
+            ...marathonPace  // Build to race pace
         });
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: Math.round(totalDistance * 0.1),
-            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
-        });
-    }
 
-    return steps;
-}
-
-// Generate run workout steps
-function generateRunSteps(totalDistance, content) {
-    const steps = [];
-    let stepOrder = 1;
-
-    // Check for interval pattern like "8x1km" or "6x1.2km"
-    const intervalMatch = content.match(/(\d+)\s*[xX×]\s*([\d.]+)\s*km/i);
-
-    if (intervalMatch) {
-        const reps = parseInt(intervalMatch[1]);
-        const distanceKm = parseFloat(intervalMatch[2]);
-        const intervalDistance = distanceKm * 1000;
+    } else if (isLongRun && hasProgressive) {
+        // Progressive long run: 60% easy, 40% at marathon pace
+        const warmupDistance = Math.round(totalDistance * 0.1);
+        const easyDistance = Math.round(totalDistance * 0.5);
+        const mpDistance = Math.round(totalDistance * 0.3);
+        const cooldownDistance = totalDistance - warmupDistance - easyDistance - mpDistance;
 
         // Warmup
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: 3000,
-            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+            endConditionValue: warmupDistance,
+            ...easyPace
         });
 
-        // Intervals
+        // Easy portion (long run pace)
         steps.push({
             stepOrder: stepOrder++,
-            stepType: { stepTypeId: 6, stepTypeKey: 'repeat' },
-            numberOfIterations: reps,
-            workoutSteps: [
-                {
-                    stepOrder: 1,
-                    stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
-                    endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-                    endConditionValue: intervalDistance,
-                    targetType: { workoutTargetTypeId: 2, workoutTargetTypeKey: 'pace.zone' },
-                    zoneNumber: 4
-                },
-                {
-                    stepOrder: 2,
-                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
-                    endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
-                    endConditionValue: 90,
-                    targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
-                }
-            ]
+            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: easyDistance,
+            ...longPace
+        });
+
+        // Marathon pace portion
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: mpDistance,
+            ...marathonPace
         });
 
         // Cooldown
@@ -784,56 +1451,88 @@ function generateRunSteps(totalDistance, content) {
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: 2000,
-            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+            endConditionValue: cooldownDistance,
+            ...easyPace
         });
-    } else if (content.includes('節奏跑') || content.includes('T配速')) {
-        // Tempo run
+
+    } else if (isLongRun) {
+        // Standard long run at long-run pace
+        const warmupDistance = 2000;
+        const cooldownDistance = 2000;
+        const mainDistance = totalDistance - warmupDistance - cooldownDistance;
+
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: 2000,
-            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+            endConditionValue: warmupDistance,
+            ...easyPace
         });
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: totalDistance - 4000,
-            targetType: { workoutTargetTypeId: 2, workoutTargetTypeKey: 'pace.zone' },
-            zoneNumber: 3
+            endConditionValue: mainDistance,
+            ...longPace
         });
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: 2000,
-            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+            endConditionValue: cooldownDistance,
+            ...easyPace
         });
-    } else {
-        // Easy/long run
+
+    } else if (isRecovery) {
+        // Recovery/easy run
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: Math.round(totalDistance * 0.1),
-            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+            ...easyPace
         });
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: Math.round(totalDistance * 0.8),
-            targetType: { workoutTargetTypeId: 4, workoutTargetTypeKey: 'heart.rate.zone' },
-            zoneNumber: 2
+            ...easyPace
         });
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: Math.round(totalDistance * 0.1),
-            targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
+            ...easyPace
+        });
+
+    } else {
+        // Default: easy run with pace target
+        const warmupDistance = Math.round(totalDistance * 0.1);
+        const mainDistance = Math.round(totalDistance * 0.8);
+        const cooldownDistance = totalDistance - warmupDistance - mainDistance;
+
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: warmupDistance,
+            ...easyPace
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: mainDistance,
+            ...easyPace
+        });
+        steps.push({
+            stepOrder: stepOrder++,
+            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+            endConditionValue: cooldownDistance,
+            ...easyPace
         });
     }
 

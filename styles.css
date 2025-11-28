@@ -2713,6 +2713,140 @@ body {
     }
 }
 
+/* ============================================
+   Workout Steps Visualization (Garmin Style)
+   ============================================ */
+
+.steps-preview {
+    background: #1c1c1e;
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 15px;
+}
+
+.steps-header {
+    color: #8e8e93;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.step-item {
+    display: flex;
+    background: #2c2c2e;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.step-color-bar {
+    width: 4px;
+    flex-shrink: 0;
+}
+
+.step-color-bar.warmup { background: #E2001A; }
+.step-color-bar.cooldown { background: #34C759; }
+.step-color-bar.interval { background: #007AFF; }
+.step-color-bar.rest { background: #8e8e93; }
+.step-color-bar.active { background: #FF9500; }
+
+.step-content {
+    padding: 12px 16px;
+    flex: 1;
+}
+
+.step-label {
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.step-duration {
+    color: #8e8e93;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+}
+
+.step-target {
+    color: #FF9500;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.step-cadence {
+    color: #5AC8FA;
+    font-size: 0.8rem;
+    margin-left: 10px;
+}
+
+.step-description {
+    color: #aeaeb2;
+    font-size: 0.85rem;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+.step-type-warmup {
+    background: linear-gradient(90deg, rgba(226, 0, 26, 0.15) 0%, #2c2c2e 100%);
+}
+
+.step-type-cooldown {
+    background: linear-gradient(90deg, rgba(52, 199, 89, 0.15) 0%, #2c2c2e 100%);
+}
+
+.step-type-warmup .step-label { color: #E2001A; }
+.step-type-cooldown .step-label { color: #34C759; }
+.step-type-interval .step-label { color: #007AFF; }
+
+.step-repeat-group {
+    background: #2c2c2e;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    border-left: 4px solid #FF9500;
+}
+
+.repeat-header {
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1px solid #3c3c3e;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.repeat-times {
+    background: #FF9500;
+    color: #1c1c1e;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.repeat-description {
+    color: #aeaeb2;
+    font-size: 0.85rem;
+    font-weight: 400;
+}
+
+.repeat-steps {
+    padding: 8px;
+}
+
+.repeat-steps .step-item {
+    margin-bottom: 6px;
+}
+
+.repeat-steps .step-item:last-child {
+    margin-bottom: 0;
+}
+
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
     width: 8px;

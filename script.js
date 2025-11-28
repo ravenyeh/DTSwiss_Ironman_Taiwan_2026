@@ -1463,26 +1463,27 @@ function generateRunSteps(totalDistance, content) {
 
     } else if (isBrick) {
         // Brick run (post-bike transition run)
-        // Conservative start, then build to race pace
+        // Use specific pace from content if provided (e.g., "@ 5:55/km")
+        const targetPace = contentPace || marathonPace;
         const transitionDistance = 1000;  // First km conservative
         const mainDistance = totalDistance - transitionDistance;
 
-        // Transition/conservative start
+        // Transition/conservative start (slightly slower than target)
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: transitionDistance,
-            ...longPace  // Conservative pace for transition
+            ...easyPace  // Easy pace for transition
         });
 
-        // Main run at race pace
+        // Main run at specified pace
         steps.push({
             stepOrder: stepOrder++,
             stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: mainDistance,
-            ...marathonPace  // Build to race pace
+            ...targetPace
         });
 
     } else if (isLongRun) {

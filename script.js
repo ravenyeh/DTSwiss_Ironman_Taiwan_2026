@@ -1539,6 +1539,168 @@ function generateRunSteps(totalDistance, content) {
     return steps;
 }
 
+// ============================================
+// Workout Steps Visualization
+// ============================================
+
+// Render workout steps preview (Garmin style)
+function renderStepsPreview(workout, sportType) {
+    const steps = workout.workoutSegments?.[0]?.workoutSteps || [];
+    if (steps.length === 0) return '';
+
+    let html = `<div class="steps-preview"><div class="steps-header">訓練步驟</div>`;
+
+    steps.forEach(step => {
+        html += renderStep(step, sportType);
+    });
+
+    html += `</div>`;
+    return html;
+}
+
+// Render a single step or repeat group
+function renderStep(step, sportType) {
+    const stepType = step.stepType?.stepTypeKey || 'interval';
+
+    if (stepType === 'repeat' && step.workoutSteps) {
+        // Render repeat group
+        return renderRepeatGroup(step, sportType);
+    }
+
+    // Render single step
+    const typeClass = `step-type-${stepType}`;
+    const colorClass = stepType;
+    const label = getStepLabel(stepType);
+    const duration = formatStepDuration(step);
+    const target = formatStepTarget(step, sportType);
+
+    let html = `
+        <div class="step-item ${typeClass}">
+            <div class="step-color-bar ${colorClass}"></div>
+            <div class="step-content">
+                <div class="step-label">${label}</div>
+                <div class="step-duration">${duration}</div>
+                ${target ? `<div class="step-target">${target}</div>` : ''}
+                ${step.description ? `<div class="step-description">${step.description}</div>` : ''}
+            </div>
+        </div>
+    `;
+    return html;
+}
+
+// Render a repeat group with nested steps
+function renderRepeatGroup(step, sportType) {
+    const reps = step.numberOfIterations || 1;
+    const childSteps = step.workoutSteps || [];
+
+    let html = `
+        <div class="step-repeat-group">
+            <div class="repeat-header">
+                <span class="repeat-times">${reps}x</span>
+                <span>重複訓練</span>
+                ${step.description ? `<span class="repeat-description">- ${step.description}</span>` : ''}
+            </div>
+            <div class="repeat-steps">
+    `;
+
+    childSteps.forEach(childStep => {
+        html += renderStep(childStep, sportType);
+    });
+
+    html += `</div></div>`;
+    return html;
+}
+
+// Get human-readable step label
+function getStepLabel(stepType) {
+    const labels = {
+        'warmup': '熱身',
+        'cooldown': '緩和',
+        'interval': '主課表',
+        'rest': '休息',
+        'recovery': '恢復',
+        'active': '動態恢復'
+    };
+    return labels[stepType] || stepType;
+}
+
+// Format step duration
+function formatStepDuration(step) {
+    const condition = step.endCondition?.conditionTypeKey;
+    const value = step.endConditionValue;
+
+    if (!condition || !value) return '';
+
+    if (condition === 'distance') {
+        if (value >= 1000) {
+            return `${(value / 1000).toFixed(1)} km`;
+        }
+        return `${value} m`;
+    } else if (condition === 'time') {
+        if (value >= 60) {
+            const mins = Math.floor(value / 60);
+            const secs = value % 60;
+            return secs > 0 ? `${mins}分${secs}秒` : `${mins} 分鐘`;
+        }
+        return `${value} 秒`;
+    } else if (condition === 'lap.button') {
+        return '按圈結束';
+    }
+    return '';
+}
+
+// Format step target (power/pace)
+function formatStepTarget(step, sportType) {
+    const targetType = step.targetType?.workoutTargetTypeKey;
+    const v1 = step.targetValueOne;
+    const v2 = step.targetValueTwo;
+
+    if (!targetType || targetType === 'no.target') return '';
+
+    if (targetType === 'power.zone' && v1 && v2) {
+        return `功率: ${Math.round(v1)}-${Math.round(v2)} W`;
+    } else if (targetType === 'speed.zone' && v1 && v2) {
+        // Convert m/s to pace
+        if (sportType === 'swim') {
+            const pace1 = Math.round(100 / v2);  // faster
+            const pace2 = Math.round(100 / v1);  // slower
+            return `配速: ${formatPace(pace1)}-${formatPace(pace2)}/100m`;
+        } else {
+            const pace1 = Math.round(1000 / v2);  // faster
+            const pace2 = Math.round(1000 / v1);  // slower
+            return `配速: ${formatPace(pace1)}-${formatPace(pace2)}/km`;
+        }
+    } else if (targetType === 'pace.zone' && v1 && v2) {
+        if (sportType === 'swim') {
+            const pace1 = Math.round(100 / v2);
+            const pace2 = Math.round(100 / v1);
+            return `配速: ${formatPace(pace1)}-${formatPace(pace2)}/100m`;
+        } else {
+            const pace1 = Math.round(1000 / v2);
+            const pace2 = Math.round(1000 / v1);
+            return `配速: ${formatPace(pace1)}-${formatPace(pace2)}/km`;
+        }
+    }
+
+    // Add cadence if present
+    let result = '';
+    if (step.secondaryTargetType?.workoutTargetTypeKey === 'cadence.zone') {
+        const c1 = step.secondaryTargetValueOne;
+        const c2 = step.secondaryTargetValueTwo;
+        if (c1 && c2) {
+            result += `迴轉速: ${c1}-${c2} rpm`;
+        }
+    }
+    return result;
+}
+
+// Format seconds to MM:SS
+function formatPace(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 // Show workout modal
 // overrideDate: if provided, the workouts will be scheduled for this date instead of training's original date
 function showWorkoutModal(dayIndex, overrideDate = null) {
@@ -1603,6 +1765,7 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
                         <span>距離: ${(workout.data.estimatedDistanceInMeters / 1000).toFixed(1)} km</span>
                         <span>預估時間: ${Math.round(workout.data.estimatedDurationInSecs / 60)} 分鐘</span>
                     </div>
+                    ${renderStepsPreview(workout.data, workout.type)}
                     <div class="workout-actions-row">
                         <button class="btn-trainer btn-json" onclick="downloadWorkoutJson(${idx}, '${escapedName}')">下載 JSON</button>
                         ${isBike ? `<button class="btn-trainer btn-zwo" onclick="downloadWorkoutZWO(${idx}, '${escapedName}')">下載 ZWO</button>

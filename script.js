@@ -518,6 +518,29 @@ function parseRunPaceFromContent(content) {
     return null;
 }
 
+// Parse structured long run description like "(前8km輕鬆 + 中段14km @ 5:55/km + 最後4km輕鬆)"
+function parseStructuredLongRun(content) {
+    // Pattern: 前Xkm + 中段Ykm @ pace + 最後Zkm
+    const firstMatch = content.match(/前\s*([\d.]+)\s*km/i);
+    const middleMatch = content.match(/中段\s*([\d.]+)\s*km\s*@\s*(\d+):(\d+)\/km/i);
+    const lastMatch = content.match(/最後\s*([\d.]+)\s*km/i);
+
+    if (firstMatch && middleMatch && lastMatch) {
+        const firstKm = parseFloat(firstMatch[1]);
+        const middleKm = parseFloat(middleMatch[1]);
+        const middlePaceSec = parseInt(middleMatch[2]) * 60 + parseInt(middleMatch[3]);
+        const lastKm = parseFloat(lastMatch[1]);
+
+        return {
+            firstDistance: firstKm * 1000,
+            middleDistance: middleKm * 1000,
+            middlePace: getRunPaceFromSeconds(middlePaceSec),
+            lastDistance: lastKm * 1000
+        };
+    }
+    return null;
+}
+
 // Convert swim pace (seconds/100m) to speed (m/s) for Garmin API
 function swimPaceToSpeed(paceSecondsPer100m) {
     return 100 / paceSecondsPer100m;
@@ -1425,76 +1448,65 @@ function generateRunSteps(totalDistance, content) {
             ...marathonPace  // Build to race pace
         });
 
-    } else if (isLongRun && hasProgressive) {
-        // Progressive long run: 60% easy, 40% at marathon pace
-        const warmupDistance = Math.round(totalDistance * 0.1);
-        const easyDistance = Math.round(totalDistance * 0.5);
-        const mpDistance = Math.round(totalDistance * 0.3);
-        const cooldownDistance = totalDistance - warmupDistance - easyDistance - mpDistance;
-
-        // Warmup
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: warmupDistance,
-            ...easyPace
-        });
-
-        // Easy portion (long run pace)
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: easyDistance,
-            ...longPace
-        });
-
-        // Marathon pace portion
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: mpDistance,
-            ...marathonPace
-        });
-
-        // Cooldown
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: cooldownDistance,
-            ...easyPace
-        });
-
     } else if (isLongRun) {
-        // Standard long run at long-run pace
-        const warmupDistance = 2000;
-        const cooldownDistance = 2000;
-        const mainDistance = totalDistance - warmupDistance - cooldownDistance;
+        // Try to parse structured long run description first
+        const structuredRun = parseStructuredLongRun(content);
 
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: warmupDistance,
-            ...easyPace
-        });
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: mainDistance,
-            ...longPace
-        });
-        steps.push({
-            stepOrder: stepOrder++,
-            stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
-            endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
-            endConditionValue: cooldownDistance,
-            ...easyPace
-        });
+        if (structuredRun) {
+            // Use exact distances and pace from description
+            // e.g., "前8km輕鬆 + 中段14km @ 5:55/km + 最後4km輕鬆"
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: structuredRun.firstDistance,
+                ...easyPace
+            });
+
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: structuredRun.middleDistance,
+                ...structuredRun.middlePace
+            });
+
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: structuredRun.lastDistance,
+                ...easyPace
+            });
+
+        } else {
+            // Standard long run at long-run pace
+            const warmupDistance = 2000;
+            const cooldownDistance = 2000;
+            const mainDistance = totalDistance - warmupDistance - cooldownDistance;
+
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: warmupDistance,
+                ...easyPace
+            });
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: mainDistance,
+                ...longPace
+            });
+            steps.push({
+                stepOrder: stepOrder++,
+                stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
+                endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
+                endConditionValue: cooldownDistance,
+                ...easyPace
+            });
+        }
 
     } else if (isRecovery) {
         // Recovery/easy run - use specific pace from content if provided

@@ -1800,6 +1800,46 @@ function formatPace(seconds) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
+// Convert workout name to English filename
+function toEnglishFilename(workoutName, sportType) {
+    // Extract day number
+    const dayMatch = workoutName.match(/Day\s*(\d+)/i);
+    const dayNum = dayMatch ? dayMatch[1] : '';
+
+    // Sport type mapping
+    const sportMap = {
+        'swim': 'Swim',
+        'bike': 'Bike',
+        'run': 'Run'
+    };
+    const sport = sportMap[sportType] || 'Workout';
+
+    // Phase mapping
+    const phaseMap = {
+        '基礎期': 'Base',
+        '建構期': 'Build',
+        '強化期': 'Build',
+        '巔峰期': 'Peak',
+        '調整期': 'Taper',
+        '比賽週': 'Race'
+    };
+    let phase = '';
+    for (const [cn, en] of Object.entries(phaseMap)) {
+        if (workoutName.includes(cn)) {
+            phase = en;
+            break;
+        }
+    }
+
+    // Build filename
+    const parts = [];
+    if (dayNum) parts.push(`Day${dayNum}`);
+    parts.push(sport);
+    if (phase) parts.push(phase);
+
+    return parts.join('_');
+}
+
 // Show workout modal
 // overrideDate: if provided, the workouts will be scheduled for this date instead of training's original date
 function showWorkoutModal(dayIndex, overrideDate = null) {
@@ -1848,8 +1888,9 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
             const typeLabel = { swim: '游泳', bike: '自行車', run: '跑步' }[workout.type];
             const typeColor = { swim: 'var(--swim-color)', bike: 'var(--bike-color)', run: 'var(--run-color)' }[workout.type];
 
-            const escapedName = workout.data.workoutName.replace(/'/g, "\\'").replace(/"/g, '\\"');
             const isBike = workout.type === 'bike';
+            // Use English filename for downloads
+            const englishFilename = toEnglishFilename(workout.data.workoutName, workout.type);
             // Store workout data for download functions
             window[`workoutData_${idx}`] = workout.data;
             html += `
@@ -1866,9 +1907,9 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
                     </div>
                     ${renderStepsPreview(workout.data, workout.type)}
                     <div class="workout-actions-row">
-                        <button class="btn-trainer btn-json" onclick="downloadWorkoutJson(${idx}, '${escapedName}')">下載 JSON</button>
-                        ${isBike ? `<button class="btn-trainer btn-zwo" onclick="downloadWorkoutZWO(${idx}, '${escapedName}')">下載 ZWO</button>
-                        <button class="btn-trainer btn-erg" onclick="downloadWorkoutERG(${idx}, '${escapedName}')">下載 ERG</button>` : ''}
+                        <button class="btn-trainer btn-json" onclick="downloadWorkoutJson(${idx}, '${englishFilename}')">下載 JSON</button>
+                        ${isBike ? `<button class="btn-trainer btn-zwo" onclick="downloadWorkoutZWO(${idx}, '${englishFilename}')">下載 ZWO</button>
+                        <button class="btn-trainer btn-erg" onclick="downloadWorkoutERG(${idx}, '${englishFilename}')">下載 ERG</button>` : ''}
                     </div>
                 </div>
             `;

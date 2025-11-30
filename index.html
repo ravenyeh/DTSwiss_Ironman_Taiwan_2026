@@ -203,11 +203,22 @@
     <!-- Training Schedule Section -->
     <section id="schedule" class="section schedule-section">
         <div class="container">
-            <h2 class="section-title">週訓練量總覽</h2>
+            <!-- User Settings Banner -->
+            <div class="settings-summary-banner" id="settingsSummaryBanner">
+                <div class="summary-content">
+                    <span class="summary-label">⚙️ 課表已依照您的設定客製化：</span>
+                    <div class="summary-values" id="summaryValues">
+                        <span class="value-item"><img src="images/cycling.png" alt="FTP"> FTP: <strong id="displayFTP">190</strong>W</span>
+                        <span class="value-item"><img src="images/run.png" alt="配速"> 馬拉松: <strong id="displayRunPace">4:30</strong>/km</span>
+                        <span class="value-item"><img src="images/swim.png" alt="CSS"> CSS: <strong id="displayCSS">2:30</strong>/100m</span>
+                    </div>
+                </div>
+                <button class="btn-edit-settings" onclick="toggleSettingsPanel()">修改設定</button>
+            </div>
 
-            <!-- User Settings Panel -->
-            <div class="user-settings-panel">
-                <h3 class="settings-title">⚙️ 個人化訓練設定</h3>
+            <!-- User Settings Panel (collapsible) -->
+            <div class="user-settings-panel" id="settingsPanel" style="display: none;">
+                <h3 class="settings-title">個人化訓練設定</h3>
                 <p class="settings-desc">輸入您的能力數據，課表將自動調整為對應的功率與配速區間</p>
                 <div class="settings-grid">
                     <div class="setting-item">
@@ -244,9 +255,13 @@
                         <span class="setting-hint">游泳訓練會顯示對應的配速區間</span>
                     </div>
                 </div>
-                <button class="btn-save-settings" onclick="saveUserSettings()">更新課表內容</button>
-                <div id="settingsSavedMessage" class="settings-saved-message"></div>
+                <div class="settings-actions">
+                    <button class="btn-save-settings" onclick="saveUserSettings()">儲存設定</button>
+                    <button class="btn-cancel-settings" onclick="toggleSettingsPanel()">取消</button>
+                </div>
             </div>
+
+            <h2 class="section-title">週訓練量總覽</h2>
 
             <!-- Weekly Summary with Integrated Phases -->
             <div class="weekly-summary">

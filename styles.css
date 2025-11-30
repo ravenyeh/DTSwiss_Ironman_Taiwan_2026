@@ -599,13 +599,97 @@ body {
     border-radius: 2px;
 }
 
-/* User Settings Panel */
+/* User Settings Summary Banner */
+.settings-summary-banner {
+    background: linear-gradient(135deg, rgba(226, 0, 26, 0.1) 0%, rgba(226, 0, 26, 0.05) 100%);
+    border: 1px solid rgba(226, 0, 26, 0.2);
+    border-radius: 12px;
+    padding: 15px 20px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.settings-summary-banner .summary-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.settings-summary-banner .summary-label {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 0.9rem;
+}
+
+.settings-summary-banner .summary-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.settings-summary-banner .value-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--card-bg);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.settings-summary-banner .value-item img {
+    width: 16px;
+    height: 16px;
+}
+
+.settings-summary-banner .value-item strong {
+    color: var(--primary-color);
+}
+
+.settings-summary-banner .btn-edit-settings {
+    padding: 8px 18px;
+    background: var(--card-bg);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.settings-summary-banner .btn-edit-settings:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* User Settings Panel (collapsible) */
 .user-settings-panel {
     background: var(--card-bg);
     border-radius: 16px;
     padding: 30px;
-    margin-bottom: 40px;
+    margin-bottom: 30px;
     border: 1px solid var(--border-color);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .settings-title {
@@ -697,12 +781,15 @@ body {
     opacity: 0.7;
 }
 
+.settings-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
 .btn-save-settings {
-    display: block;
-    width: 100%;
-    max-width: 300px;
-    margin: 0 auto;
-    padding: 14px 30px;
+    padding: 12px 30px;
     background: var(--primary-color);
     color: white;
     border: none;
@@ -719,20 +806,21 @@ body {
     box-shadow: 0 4px 15px rgba(226, 0, 26, 0.3);
 }
 
-.settings-saved-message {
-    text-align: center;
-    margin-top: 15px;
-    padding: 12px;
+.btn-cancel-settings {
+    padding: 12px 30px;
+    background: transparent;
+    color: var(--text-light);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
-    font-weight: 500;
-    display: none;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
-.settings-saved-message.show {
-    display: block;
-    background: rgba(52, 199, 89, 0.15);
-    color: #34c759;
-    animation: fadeIn 0.3s ease;
+.btn-cancel-settings:hover {
+    background: var(--bg-light);
+    color: var(--text-color);
 }
 
 @media (max-width: 768px) {
@@ -742,6 +830,16 @@ body {
 
     .user-settings-panel {
         padding: 20px;
+    }
+
+    .settings-summary-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .settings-summary-banner .btn-edit-settings {
+        width: 100%;
+        text-align: center;
     }
 }
 

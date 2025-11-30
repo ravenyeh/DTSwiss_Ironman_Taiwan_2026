@@ -156,6 +156,7 @@ function formatDate(dateStr) {
 // Filter buttons
 document.addEventListener('DOMContentLoaded', () => {
     populateSchedule();
+    updateSettingsDisplay();
 
     const filterBtns = document.querySelectorAll('.filter-btn');
     filterBtns.forEach(btn => {
@@ -429,16 +430,83 @@ updateCountdown();
 setInterval(updateCountdown, 1000);
 
 // ===========================================
-// Training Parameters (固定訓練參數)
+// Training Parameters (使用者自訂或預設值)
 // ===========================================
-const TRAINING_PARAMS = {
-    // Cycling: FTP 190W
-    FTP: 190,
-    // Running: Marathon Pace 4:30/km = 270 seconds/km
-    MARATHON_PACE_SEC: 270,
-    // Swimming: CSS 2:30/100m = 150 seconds/100m
-    CSS_SEC: 150
-};
+
+// Helper to parse pace string "M:SS" to seconds
+function parsePaceToSeconds(paceStr) {
+    if (!paceStr) return null;
+    const parts = paceStr.split(':');
+    if (parts.length !== 2) return null;
+    return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+}
+
+// Helper to format seconds to pace string "M:SS"
+function formatSecondsToPace(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Get training params from localStorage or use defaults
+function getTrainingParams() {
+    const storedFTP = localStorage.getItem('userFTP');
+    const storedRunPace = localStorage.getItem('userRunPace');
+    const storedSwimCSS = localStorage.getItem('userSwimCSS');
+
+    return {
+        FTP: storedFTP ? parseInt(storedFTP) : 190,
+        MARATHON_PACE_SEC: storedRunPace ? parsePaceToSeconds(storedRunPace) : 270,
+        CSS_SEC: storedSwimCSS ? parsePaceToSeconds(storedSwimCSS) : 150
+    };
+}
+
+// Dynamic TRAINING_PARAMS that reads from localStorage
+const TRAINING_PARAMS = getTrainingParams();
+
+// Save user settings to localStorage and refresh workouts
+function saveUserSettings() {
+    const ftpInput = document.getElementById('userFTP');
+    const runPaceInput = document.getElementById('userRunPace');
+    const swimCSSInput = document.getElementById('userSwimCSS');
+
+    // Save to localStorage
+    if (ftpInput.value) {
+        localStorage.setItem('userFTP', ftpInput.value);
+        TRAINING_PARAMS.FTP = parseInt(ftpInput.value);
+    }
+    if (runPaceInput.value) {
+        localStorage.setItem('userRunPace', runPaceInput.value);
+        TRAINING_PARAMS.MARATHON_PACE_SEC = parsePaceToSeconds(runPaceInput.value);
+    }
+    if (swimCSSInput.value) {
+        localStorage.setItem('userSwimCSS', swimCSSInput.value);
+        TRAINING_PARAMS.CSS_SEC = parsePaceToSeconds(swimCSSInput.value);
+    }
+
+    // Show confirmation message
+    const msgEl = document.getElementById('settingsSavedMessage');
+    if (msgEl) {
+        msgEl.innerHTML = `✓ 設定已儲存！<br><small>FTP: ${TRAINING_PARAMS.FTP}W | 馬拉松配速: ${formatSecondsToPace(TRAINING_PARAMS.MARATHON_PACE_SEC)}/km | CSS: ${formatSecondsToPace(TRAINING_PARAMS.CSS_SEC)}/100m</small>`;
+        msgEl.classList.add('show');
+        setTimeout(() => msgEl.classList.remove('show'), 5000);
+    }
+
+    // Refresh the page to regenerate workouts with new settings
+    // Note: In a more advanced implementation, we could regenerate workouts without refresh
+    console.log('Settings saved:', TRAINING_PARAMS);
+}
+
+// Update settings display on page load
+function updateSettingsDisplay() {
+    const ftpInput = document.getElementById('userFTP');
+    const runPaceInput = document.getElementById('userRunPace');
+    const swimCSSInput = document.getElementById('userSwimCSS');
+
+    if (ftpInput) ftpInput.value = TRAINING_PARAMS.FTP;
+    if (runPaceInput) runPaceInput.value = formatSecondsToPace(TRAINING_PARAMS.MARATHON_PACE_SEC);
+    if (swimCSSInput) swimCSSInput.value = formatSecondsToPace(TRAINING_PARAMS.CSS_SEC);
+}
 
 // Power Zones (based on FTP)
 const POWER_ZONES = {

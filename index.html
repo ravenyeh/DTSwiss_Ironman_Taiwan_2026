@@ -205,6 +205,49 @@
         <div class="container">
             <h2 class="section-title">週訓練量總覽</h2>
 
+            <!-- User Settings Panel -->
+            <div class="user-settings-panel">
+                <h3 class="settings-title">⚙️ 個人化訓練設定</h3>
+                <p class="settings-desc">輸入您的能力數據，課表將自動調整為對應的功率與配速區間</p>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <label>
+                            <img src="images/cycling.png" class="setting-icon" alt="自行車">
+                            FTP 功能閾值功率
+                        </label>
+                        <div class="input-group">
+                            <input type="number" id="userFTP" min="100" max="500" placeholder="190">
+                            <span class="unit">W</span>
+                        </div>
+                        <span class="setting-hint">自行車訓練會顯示對應的功率區間</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <img src="images/run.png" class="setting-icon" alt="跑步">
+                            馬拉松配速
+                        </label>
+                        <div class="input-group">
+                            <input type="text" id="userRunPace" placeholder="4:30" pattern="[0-9]{1,2}:[0-9]{2}">
+                            <span class="unit">/km</span>
+                        </div>
+                        <span class="setting-hint">跑步訓練會顯示對應的配速區間</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>
+                            <img src="images/swim.png" class="setting-icon" alt="游泳">
+                            CSS 臨界游速
+                        </label>
+                        <div class="input-group">
+                            <input type="text" id="userSwimCSS" placeholder="2:30" pattern="[0-9]{1,2}:[0-9]{2}">
+                            <span class="unit">/100m</span>
+                        </div>
+                        <span class="setting-hint">游泳訓練會顯示對應的配速區間</span>
+                    </div>
+                </div>
+                <button class="btn-save-settings" onclick="saveUserSettings()">更新課表內容</button>
+                <div id="settingsSavedMessage" class="settings-saved-message"></div>
+            </div>
+
             <!-- Weekly Summary with Integrated Phases -->
             <div class="weekly-summary">
                 <div class="summary-cards">

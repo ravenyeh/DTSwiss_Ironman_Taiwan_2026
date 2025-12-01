@@ -1647,10 +1647,11 @@ function generateRunSteps(totalDistance, content) {
             });
 
         } else {
-            // Standard long run at long-run pace
+            // Standard long run - use specific pace from content if available, otherwise use long-run pace
             const warmupDistance = 2000;
             const cooldownDistance = 2000;
             const mainDistance = totalDistance - warmupDistance - cooldownDistance;
+            const mainPace = contentPace || longPace;
 
             steps.push({
                 stepOrder: stepOrder++,
@@ -1664,7 +1665,7 @@ function generateRunSteps(totalDistance, content) {
                 stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
                 endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
                 endConditionValue: mainDistance,
-                ...longPace
+                ...mainPace
             });
             steps.push({
                 stepOrder: stepOrder++,

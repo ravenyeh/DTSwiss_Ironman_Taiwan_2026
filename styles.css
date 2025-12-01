@@ -497,12 +497,26 @@ body {
     border: 1px solid rgba(255, 215, 0, 0.3);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    position: relative;
 }
 
 .hero-slogan-card:hover {
     transform: translateY(-3px);
     box-shadow: 0 12px 40px rgba(255, 215, 0, 0.2);
     border-color: rgba(255, 215, 0, 0.6);
+}
+
+.card-link-icon {
+    position: absolute;
+    bottom: 10px;
+    right: 12px;
+    font-size: 0.9rem;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+.hero-slogan-card:hover .card-link-icon {
+    opacity: 1;
 }
 
 .tyone-logos {

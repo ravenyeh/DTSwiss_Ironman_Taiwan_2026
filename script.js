@@ -2810,6 +2810,7 @@ function displayTodayTraining() {
     const todayRun = document.getElementById('todayRun');
     const todayHours = document.getElementById('todayHours');
     const todayNote = document.getElementById('todayNote');
+    const todayMotivation = document.getElementById('todayMotivation');
     const todayActions = document.getElementById('todayActions');
 
     if (!todayLabel) return;
@@ -2901,6 +2902,17 @@ function displayTodayTraining() {
             todayNote.style.display = 'block';
         } else {
             todayNote.style.display = 'none';
+        }
+
+        // Display motivation quote
+        if (todayMotivation && trainingIndex >= 0) {
+            const quote = getMotivationQuote(trainingIndex);
+            if (quote) {
+                todayMotivation.textContent = '💪 ' + quote;
+                todayMotivation.style.display = 'block';
+            } else {
+                todayMotivation.style.display = 'none';
+            }
         }
 
         // Add view/import button if training has workouts

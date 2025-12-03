@@ -113,6 +113,9 @@ module.exports = async (req, res) => {
             message += '（排程功能暫不可用）';
         }
 
+        // Get OAuth2 token for client-side storage
+        const oauth2Token = GC.client?.oauth2Token || null;
+
         return res.status(200).json({
             success: successCount > 0,
             message: message,
@@ -121,7 +124,8 @@ module.exports = async (req, res) => {
                 total: workouts.length,
                 imported: successCount,
                 scheduled: scheduledCount
-            }
+            },
+            oauth2Token: oauth2Token
         });
 
     } catch (error) {

@@ -3269,6 +3269,36 @@ body {
     background: rgba(255, 255, 255, 0.3);
 }
 
+.garmin-token-status {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+}
+
+.token-indicator {
+    color: #4CAF50;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.btn-garmin-logout-small {
+    padding: 8px 16px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-garmin-logout-small:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--white);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
 .btn-garmin-import {
     width: 100%;
     padding: 15px 20px;

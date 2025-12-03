@@ -28,6 +28,10 @@
       "dest": "/api/garmin/login.js"
     },
     {
+      "src": "/api/garmin/token-login",
+      "dest": "/api/garmin/token-login.js"
+    },
+    {
       "src": "/api/garmin/logout",
       "dest": "/api/garmin/logout.js"
     },

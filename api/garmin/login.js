@@ -54,13 +54,17 @@ module.exports = async (req, res) => {
         // Get user profile for confirmation
         const userProfile = await GC.getUserProfile();
 
+        // Get OAuth2 token for client-side storage
+        const oauth2Token = GC.client?.oauth2Token || null;
+
         return res.status(200).json({
             success: true,
             sessionId: sessionId,
             user: {
                 displayName: userProfile.displayName || email.split('@')[0],
                 profileImageUrl: userProfile.profileImageUrlSmall || null
-            }
+            },
+            oauth2Token: oauth2Token
         });
 
     } catch (error) {

@@ -216,18 +216,12 @@ function populateSchedule(filter = 'all') {
         // Determine if there are workouts (not a rest day)
         const hasWorkout = item.swim || item.bike || item.run;
 
-        // Get motivation quote for training days
-        const quote = getMotivationQuote(originalIndex);
-
         row.innerHTML = `
             <td>${item.week}</td>
             <td>${formatDate(item.date)}</td>
             <td><span class="phase-badge phase-${item.phase}">${item.phase}</span></td>
             <td><span class="intensity-badge intensity-${item.intensity}">${item.intensity}</span></td>
-            <td>
-                ${item.content}
-                ${quote ? `<div class="motivation-quote">💪 ${quote}</div>` : ''}
-            </td>
+            <td>${item.content}</td>
             <td>${item.swim ? item.swim + 'km' : '-'}</td>
             <td>${item.bike ? item.bike + 'km' : '-'}</td>
             <td>${item.run ? item.run + 'km' : '-'}</td>

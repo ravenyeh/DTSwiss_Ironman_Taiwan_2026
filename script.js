@@ -1,3 +1,77 @@
+// Daily Motivation Quotes for Training Days
+const motivationQuotes = [
+    "今天的汗水，是明天的榮耀！",
+    "每一步都在靠近終點線！",
+    "鐵人精神，永不放棄！",
+    "痛苦是暫時的，榮耀是永恆的！",
+    "相信過程，成就自己！",
+    "你比你想像的更強大！",
+    "堅持就是勝利！",
+    "今天的努力，決定明天的高度！",
+    "突破極限，超越自我！",
+    "每次訓練都是一次進化！",
+    "累了就想想為什麼開始！",
+    "慢慢來，比較快！",
+    "專注當下，享受過程！",
+    "強者不是不會累，而是累了也不放棄！",
+    "今天練得苦，比賽才輕鬆！",
+    "你的對手只有昨天的自己！",
+    "一公里一公里，征服全程！",
+    "汗水不會騙人！",
+    "訓練是送給自己最好的禮物！",
+    "每一次呼吸都是力量！",
+    "游得更遠，騎得更快，跑得更穩！",
+    "心有多大，舞台就有多大！",
+    "今天的配速，明天的獎牌！",
+    "不怕慢，只怕站！",
+    "用行動證明一切！",
+    "這就是你想要的人生！",
+    "挑戰自己，成為傳奇！",
+    "訓練日就是成長日！",
+    "把疲憊留在訓練場！",
+    "你的毅力正在發光！",
+    "每一滴汗都是進步的證明！",
+    "鐵人不是天生的，是練出來的！",
+    "享受這趟旅程！",
+    "今天的你會感謝現在努力的自己！",
+    "穩定輸出，持續進步！",
+    "把不可能變成可能！",
+    "專注、堅持、突破！",
+    "訓練越苦，比賽越甜！",
+    "你正在書寫自己的故事！",
+    "每個早起都值得！",
+    "讓身體適應，讓心靈強大！",
+    "距離終點又近了一天！",
+    "用汗水澆灌夢想！",
+    "這條路你不是一個人！",
+    "相信訓練，相信自己！",
+    "今天也要全力以赴！",
+    "累積里程，累積實力！",
+    "你的努力終將綻放！",
+    "保持節奏，穩健前行！",
+    "每一次訓練都是預演！",
+    "心肺在變強，意志在成長！",
+    "沒有捷徑，只有堅持！",
+    "今天的辛苦是明天的資本！",
+    "你選擇了不平凡的路！",
+    "用速度追逐夢想！",
+    "身體會記住每一次訓練！",
+    "向著目標，奮力前進！",
+    "越練越強，越來越好！",
+    "這就是冠軍的日常！",
+    "把壓力轉化為動力！",
+    "訓練是最好的投資！",
+    "每一天都在變強！",
+    "讓努力成為習慣！",
+    "你的堅持令人敬佩！",
+    "終點線在等著你！",
+    "今天也是成為更好自己的一天！",
+    "用實力說話！",
+    "保持飢渴，保持愚蠢！",
+    "訓練的意義在於突破！",
+    "你已經比昨天更強了！"
+];
+
 // Training Schedule Data
 const trainingData = [
     { day: "Week 1 - Day 1 (週一)", status: "No", intensity: "休息", date: "January 12, 2026", swim: "", bike: "", content: "完全休息日，進行輕度伸展和按摩放鬆", hours: 0, type: "完全休息", run: "", week: "Week 1", phase: "建構期" },
@@ -96,6 +170,23 @@ const trainingData = [
 // Sort by date
 trainingData.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+// Get motivation quote for a training day (by index)
+// Returns null for rest days
+function getMotivationQuote(dayIndex) {
+    const training = trainingData[dayIndex];
+    if (!training || training.intensity === '休息') return null;
+
+    // Count training days up to this index
+    let trainingDayCount = 0;
+    for (let i = 0; i <= dayIndex; i++) {
+        if (trainingData[i].intensity !== '休息') {
+            trainingDayCount++;
+        }
+    }
+    // Use modulo to cycle through quotes if we have more training days than quotes
+    return motivationQuotes[(trainingDayCount - 1) % motivationQuotes.length];
+}
+
 // Populate schedule table
 function populateSchedule(filter = 'all') {
     const tbody = document.getElementById('scheduleBody');
@@ -125,12 +216,18 @@ function populateSchedule(filter = 'all') {
         // Determine if there are workouts (not a rest day)
         const hasWorkout = item.swim || item.bike || item.run;
 
+        // Get motivation quote for training days
+        const quote = getMotivationQuote(originalIndex);
+
         row.innerHTML = `
             <td>${item.week}</td>
             <td>${formatDate(item.date)}</td>
             <td><span class="phase-badge phase-${item.phase}">${item.phase}</span></td>
             <td><span class="intensity-badge intensity-${item.intensity}">${item.intensity}</span></td>
-            <td>${item.content}</td>
+            <td>
+                ${item.content}
+                ${quote ? `<div class="motivation-quote">💪 ${quote}</div>` : ''}
+            </td>
             <td>${item.swim ? item.swim + 'km' : '-'}</td>
             <td>${item.bike ? item.bike + 'km' : '-'}</td>
             <td>${item.run ? item.run + 'km' : '-'}</td>
@@ -1966,6 +2063,9 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
     const scheduledDateStr = `${scheduledDateObj.getFullYear()}/${scheduledDateObj.getMonth() + 1}/${scheduledDateObj.getDate()}`;
     const isOverride = overrideDate && overrideDate !== training.date;
 
+    // Get motivation quote for this training day
+    const quote = getMotivationQuote(dayIndex);
+
     let html = `
         <div class="modal-header">
             <h3>Garmin 訓練計劃</h3>
@@ -1977,6 +2077,7 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
                 <span class="phase-badge phase-${training.phase}">${training.phase}</span>
                 <span class="intensity-badge intensity-${training.intensity}">${training.intensity}</span>
             </div>
+            ${quote ? `<div class="modal-motivation-quote">💪 ${quote}</div>` : ''}
             ${isOverride ? `<div class="scheduled-date-notice">📅 匯入日期：<strong>${scheduledDateStr}</strong>（今日）</div>` : ''}
             <div class="training-description">${training.content}</div>
     `;

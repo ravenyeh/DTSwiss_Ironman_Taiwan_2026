@@ -318,6 +318,13 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
             })
         });
 
+        // 檢查 HTTP 狀態
+        if (!response.ok) {
+            const text = await response.text();
+            updateGarminStatus(`[5/5] HTTP ${response.status}: ${text.substring(0, 200)}`, true);
+            return;
+        }
+
         const data = await response.json();
 
         if (data.success) {
@@ -332,9 +339,9 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
                 }
             }, 1500);
         } else {
-            let errorMsg = data.error || '匯入失敗';
-            if (data.detail) errorMsg += ' - ' + data.detail;
-            updateGarminStatus('[5/5] 伺服器錯誤：' + errorMsg, true);
+            // 顯示完整錯誤
+            const fullError = JSON.stringify(data, null, 2);
+            updateGarminStatus(`[5/5] 失敗: ${fullError}`, true);
         }
     } catch (error) {
         updateGarminStatus(`[5/5] 連線錯誤：${error.message}`, true);

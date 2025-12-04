@@ -53,40 +53,17 @@ module.exports = async (req, res) => {
 
         // Get user profile for confirmation
         const userProfile = await GC.getUserProfile();
+        console.log('User profile keys:', Object.keys(userProfile));
         console.log('User profile:', JSON.stringify(userProfile, null, 2));
-
-        // Try to get social profile for full name and profile image
-        let socialProfile = null;
-        try {
-            // Try relative path for social profile
-            socialProfile = await GC.get('/userprofile-service/socialProfile');
-            console.log('Social profile:', JSON.stringify(socialProfile, null, 2));
-        } catch (e) {
-            console.log('Social profile fetch failed (relative):', e.message);
-            try {
-                // Try with proxy prefix
-                socialProfile = await GC.get('/proxy/userprofile-service/socialProfile');
-                console.log('Social profile (proxy):', JSON.stringify(socialProfile, null, 2));
-            } catch (e2) {
-                console.log('Social profile fetch failed (proxy):', e2.message);
-                try {
-                    // Try full URL as last resort
-                    socialProfile = await GC.get('https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile');
-                    console.log('Social profile (full URL):', JSON.stringify(socialProfile, null, 2));
-                } catch (e3) {
-                    console.log('Social profile fetch failed (full URL):', e3.message);
-                }
-            }
-        }
 
         // Get OAuth2 token for client-side storage
         const oauth2Token = GC.client?.oauth2Token || null;
 
-        // Build user object with available data
+        // Build user object from userProfile (social profile fetch is unreliable)
         const user = {
             displayName: userProfile.displayName || email.split('@')[0],
-            fullName: socialProfile?.fullName || socialProfile?.userProfileFullName || userProfile.fullName || null,
-            profileImageUrl: socialProfile?.profileImageUrlSmall || socialProfile?.profileImageUrl || userProfile.profileImageUrlSmall || null
+            fullName: userProfile.fullName || userProfile.userName || null,
+            profileImageUrl: userProfile.profileImageUrlSmall || userProfile.profileImageUrl || null
         };
         console.log('Returning user:', JSON.stringify(user, null, 2));
 

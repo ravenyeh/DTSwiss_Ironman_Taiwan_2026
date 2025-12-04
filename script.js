@@ -2115,6 +2115,7 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
     const storedToken = getGarminToken();
     const hasValidToken = storedToken && !isTokenExpired(storedToken);
     const storedUser = getGarminUser();
+    const needFetchUser = hasValidToken && !storedUser;
 
     // Garmin Connect section - with token auto-login support
     html += `
@@ -2124,9 +2125,14 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
                     <div id="garminLoginSection">
                         ${hasValidToken ? `
                             <div class="garmin-token-status">
-                                <div class="garmin-user-info">
-                                    ${storedUser?.profileImageUrl ? `<img src="${storedUser.profileImageUrl}" alt="Profile" class="garmin-user-avatar">` : '<div class="garmin-user-avatar-placeholder">👤</div>'}
-                                    <span class="garmin-user-name">${storedUser?.fullName || storedUser?.displayName || '已登入'}</span>
+                                <div class="garmin-user-info" id="garminUserInfo">
+                                    ${needFetchUser ? `
+                                        <div class="garmin-user-avatar-placeholder">⏳</div>
+                                        <span class="garmin-user-name">載入中...</span>
+                                    ` : `
+                                        ${storedUser?.profileImageUrl ? `<img src="${storedUser.profileImageUrl}" alt="Profile" class="garmin-user-avatar">` : '<div class="garmin-user-avatar-placeholder">👤</div>'}
+                                        <span class="garmin-user-name">${storedUser?.fullName || storedUser?.displayName || '已登入'}</span>
+                                    `}
                                 </div>
                                 <button class="btn-garmin-import" onclick="importWithToken(${dayIndex})">
                                     直接匯入訓練
@@ -2157,6 +2163,11 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
     modalContent.innerHTML = html;
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
+
+    // Fetch user info if needed
+    if (needFetchUser) {
+        fetchAndUpdateGarminUser();
+    }
 }
 
 // Close workout modal
@@ -2553,6 +2564,24 @@ async function tryTokenLogin() {
     // Token invalid, clear it
     clearGarminToken();
     return false;
+}
+
+// Fetch user info and update UI
+async function fetchAndUpdateGarminUser() {
+    const user = await tryTokenLogin();
+    const userInfoEl = document.getElementById('garminUserInfo');
+
+    if (userInfoEl && user) {
+        userInfoEl.innerHTML = `
+            ${user.profileImageUrl ? `<img src="${user.profileImageUrl}" alt="Profile" class="garmin-user-avatar">` : '<div class="garmin-user-avatar-placeholder">👤</div>'}
+            <span class="garmin-user-name">${user.fullName || user.displayName || '已登入'}</span>
+        `;
+    } else if (userInfoEl) {
+        userInfoEl.innerHTML = `
+            <div class="garmin-user-avatar-placeholder">👤</div>
+            <span class="garmin-user-name">已登入</span>
+        `;
+    }
 }
 
 // Update Garmin status message

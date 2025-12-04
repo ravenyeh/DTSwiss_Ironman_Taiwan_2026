@@ -34,12 +34,7 @@ window.saveUserSettings = saveUserSettings;
 window.toggleSettingsPanel = toggleSettingsPanel;
 window.getMotivationQuote = getMotivationQuote;
 
-// Garmin functions
-window.garminLogin = () => garminLogin(showWorkoutModal);
-window.garminLogout = () => garminLogout(showWorkoutModal);
-window.directImportToGarmin = (dayIndex) => directImportToGarmin(dayIndex, trainingData, convertToGarminWorkout, showWorkoutModal);
-window.importWithToken = (dayIndex) => importWithToken(dayIndex, trainingData, convertToGarminWorkout, () => clearTokenAndShowLogin(showWorkoutModal));
-window.clearTokenAndShowLogin = () => clearTokenAndShowLogin(showWorkoutModal);
+// Note: Garmin functions are bound to window after function definitions (see end of file)
 
 // ============================================
 // Workout Builder Functions (kept inline for simplicity)
@@ -1707,3 +1702,12 @@ document.addEventListener('keydown', (e) => {
         closeWorkoutModal();
     }
 });
+
+// ============================================
+// Garmin Functions (bound after all function definitions)
+// ============================================
+window.garminLogin = () => garminLogin(showWorkoutModal);
+window.garminLogout = () => garminLogout(showWorkoutModal);
+window.directImportToGarmin = (dayIndex) => directImportToGarmin(dayIndex, trainingData, convertToGarminWorkout, showWorkoutModal);
+window.importWithToken = (dayIndex) => importWithToken(dayIndex, trainingData, convertToGarminWorkout, () => clearTokenAndShowLogin(showWorkoutModal));
+window.clearTokenAndShowLogin = () => clearTokenAndShowLogin(showWorkoutModal);

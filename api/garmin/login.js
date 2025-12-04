@@ -58,14 +58,24 @@ module.exports = async (req, res) => {
         // Try to get social profile for full name and profile image
         let socialProfile = null;
         try {
-            if (userProfile.displayName) {
-                socialProfile = await GC.get(
-                    `https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile/${userProfile.displayName}`
-                );
-                console.log('Social profile:', JSON.stringify(socialProfile, null, 2));
-            }
+            // Try the social profile endpoint (no displayName needed)
+            socialProfile = await GC.get(
+                'https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile'
+            );
+            console.log('Social profile:', JSON.stringify(socialProfile, null, 2));
         } catch (e) {
             console.log('Social profile fetch failed:', e.message);
+            // Fallback: try with displayName
+            try {
+                if (userProfile.displayName) {
+                    socialProfile = await GC.get(
+                        `https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile/${userProfile.displayName}`
+                    );
+                    console.log('Social profile (with displayName):', JSON.stringify(socialProfile, null, 2));
+                }
+            } catch (e2) {
+                console.log('Social profile fetch with displayName also failed:', e2.message);
+            }
         }
 
         // Get OAuth2 token for client-side storage

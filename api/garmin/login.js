@@ -58,23 +58,24 @@ module.exports = async (req, res) => {
         // Try to get social profile for full name and profile image
         let socialProfile = null;
         try {
-            // Try the social profile endpoint (no displayName needed)
-            socialProfile = await GC.get(
-                'https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile'
-            );
+            // Try relative path for social profile
+            socialProfile = await GC.get('/userprofile-service/socialProfile');
             console.log('Social profile:', JSON.stringify(socialProfile, null, 2));
         } catch (e) {
-            console.log('Social profile fetch failed:', e.message);
-            // Fallback: try with displayName
+            console.log('Social profile fetch failed (relative):', e.message);
             try {
-                if (userProfile.displayName) {
-                    socialProfile = await GC.get(
-                        `https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile/${userProfile.displayName}`
-                    );
-                    console.log('Social profile (with displayName):', JSON.stringify(socialProfile, null, 2));
-                }
+                // Try with proxy prefix
+                socialProfile = await GC.get('/proxy/userprofile-service/socialProfile');
+                console.log('Social profile (proxy):', JSON.stringify(socialProfile, null, 2));
             } catch (e2) {
-                console.log('Social profile fetch with displayName also failed:', e2.message);
+                console.log('Social profile fetch failed (proxy):', e2.message);
+                try {
+                    // Try full URL as last resort
+                    socialProfile = await GC.get('https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile');
+                    console.log('Social profile (full URL):', JSON.stringify(socialProfile, null, 2));
+                } catch (e3) {
+                    console.log('Social profile fetch failed (full URL):', e3.message);
+                }
             }
         }
 

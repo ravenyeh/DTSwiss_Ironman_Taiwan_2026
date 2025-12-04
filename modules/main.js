@@ -1940,6 +1940,20 @@ document.addEventListener('keydown', (e) => {
 // ============================================
 window.garminLogin = () => garminLogin(showWorkoutModal);
 window.garminLogout = () => garminLogout(showWorkoutModal);
-window.directImportToGarmin = (dayIndex) => directImportToGarmin(dayIndex, trainingData, convertToGarminWorkout, showWorkoutModal);
-window.importWithToken = (dayIndex) => importWithToken(dayIndex, trainingData, convertToGarminWorkout, () => clearTokenAndShowLogin(showWorkoutModal));
+window.directImportToGarmin = async (dayIndex) => {
+    try {
+        alert(`DEBUG: directImportToGarmin called with dayIndex=${dayIndex}, trainingData=${typeof trainingData}, convertToGarminWorkout=${typeof convertToGarminWorkout}, showWorkoutModal=${typeof showWorkoutModal}`);
+        await directImportToGarmin(dayIndex, trainingData, convertToGarminWorkout, showWorkoutModal);
+    } catch (err) {
+        alert(`directImportToGarmin ERROR: ${err.message}\n\nStack: ${err.stack}`);
+    }
+};
+window.importWithToken = async (dayIndex) => {
+    try {
+        alert(`DEBUG: importWithToken called with dayIndex=${dayIndex}, trainingData=${typeof trainingData}, convertToGarminWorkout=${typeof convertToGarminWorkout}`);
+        await importWithToken(dayIndex, trainingData, convertToGarminWorkout, () => clearTokenAndShowLogin(showWorkoutModal));
+    } catch (err) {
+        alert(`importWithToken ERROR: ${err.message}\n\nStack: ${err.stack}`);
+    }
+};
 window.clearTokenAndShowLogin = () => clearTokenAndShowLogin(showWorkoutModal);

@@ -2588,6 +2588,12 @@ async function garminLogin() {
 
         const data = await response.json();
 
+        // Debug: log the full response
+        if (data.debug) {
+            console.log('Garmin API debug - userProfile keys:', data.debug.userProfileKeys);
+            console.log('Garmin API debug - userProfile:', data.debug.userProfile);
+        }
+
         if (data.success) {
             setGarminSession(data.sessionId);
             // Store OAuth2 token and user info for future use

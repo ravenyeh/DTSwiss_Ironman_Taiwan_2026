@@ -46,6 +46,18 @@ module.exports = async (req, res) => {
         // Verify the token works by getting user profile
         const userProfile = await GC.getUserProfile();
 
+        // Try to get social profile for full name and profile image
+        let socialProfile = null;
+        try {
+            if (userProfile.displayName) {
+                socialProfile = await GC.get(
+                    `https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile/${userProfile.displayName}`
+                );
+            }
+        } catch (e) {
+            console.log('Social profile fetch failed:', e.message);
+        }
+
         // Generate session ID
         const sessionId = `gc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -72,7 +84,8 @@ module.exports = async (req, res) => {
             sessionId: sessionId,
             user: {
                 displayName: userProfile.displayName || 'Garmin User',
-                profileImageUrl: userProfile.profileImageUrlSmall || null
+                fullName: socialProfile?.fullName || socialProfile?.userProfileFullName || null,
+                profileImageUrl: socialProfile?.profileImageUrlSmall || userProfile.profileImageUrlSmall || null
             },
             oauth2Token: refreshedToken
         });

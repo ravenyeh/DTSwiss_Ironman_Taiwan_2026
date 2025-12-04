@@ -2111,9 +2111,10 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
         });
     }
 
-    // Check for stored token
+    // Check for stored token and user info
     const storedToken = getGarminToken();
     const hasValidToken = storedToken && !isTokenExpired(storedToken);
+    const storedUser = getGarminUser();
 
     // Garmin Connect section - with token auto-login support
     html += `
@@ -2123,12 +2124,15 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
                     <div id="garminLoginSection">
                         ${hasValidToken ? `
                             <div class="garmin-token-status">
-                                <span class="token-indicator">🔑 已從瀏覽器取得登入憑證</span>
+                                <div class="garmin-user-info">
+                                    ${storedUser?.profileImageUrl ? `<img src="${storedUser.profileImageUrl}" alt="Profile" class="garmin-user-avatar">` : '<div class="garmin-user-avatar-placeholder">👤</div>'}
+                                    <span class="garmin-user-name">${storedUser?.fullName || storedUser?.displayName || '已登入'}</span>
+                                </div>
                                 <button class="btn-garmin-import" onclick="importWithToken(${dayIndex})">
                                     直接匯入訓練
                                 </button>
                                 <button class="btn-garmin-logout-small" onclick="clearTokenAndShowLogin()">
-                                    清除憑證
+                                    登出
                                 </button>
                             </div>
                         ` : `
@@ -2440,6 +2444,7 @@ function downloadWorkoutERG(idx, filename) {
 
 const GARMIN_SESSION_KEY = 'garmin_session_id';
 const GARMIN_TOKEN_KEY = 'garmin_oauth2_token';
+const GARMIN_USER_KEY = 'garmin_user_info';
 
 // Get Garmin session from localStorage
 function getGarminSession() {
@@ -2478,6 +2483,28 @@ function clearGarminToken() {
     localStorage.removeItem(GARMIN_TOKEN_KEY);
 }
 
+// Get Garmin user info from localStorage
+function getGarminUser() {
+    try {
+        const user = localStorage.getItem(GARMIN_USER_KEY);
+        return user ? JSON.parse(user) : null;
+    } catch {
+        return null;
+    }
+}
+
+// Set Garmin user info to localStorage
+function setGarminUser(user) {
+    if (user) {
+        localStorage.setItem(GARMIN_USER_KEY, JSON.stringify(user));
+    }
+}
+
+// Clear Garmin user info
+function clearGarminUser() {
+    localStorage.removeItem(GARMIN_USER_KEY);
+}
+
 // Check if token is expired
 function isTokenExpired(token) {
     if (!token) return true;
@@ -2513,6 +2540,9 @@ async function tryTokenLogin() {
             setGarminSession(data.sessionId);
             if (data.oauth2Token) {
                 setGarminToken(data.oauth2Token);
+            }
+            if (data.user) {
+                setGarminUser(data.user);
             }
             return data.user;
         }
@@ -2560,11 +2590,14 @@ async function garminLogin() {
 
         if (data.success) {
             setGarminSession(data.sessionId);
-            // Store OAuth2 token for future use
+            // Store OAuth2 token and user info for future use
             if (data.oauth2Token) {
                 setGarminToken(data.oauth2Token);
             }
-            updateGarminStatus(`登入成功！歡迎 ${data.user.displayName}`, false);
+            if (data.user) {
+                setGarminUser(data.user);
+            }
+            updateGarminStatus(`登入成功！歡迎 ${data.user.fullName || data.user.displayName}`, false);
 
             // Refresh modal to show logged-in state
             setTimeout(() => {
@@ -2779,6 +2812,7 @@ async function importWithToken(dayIndex) {
 function clearTokenAndShowLogin() {
     clearGarminToken();
     clearGarminSession();
+    clearGarminUser();
 
     // Refresh modal to show login form
     const currentIndex = window.currentWorkoutDayIndex;

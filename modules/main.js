@@ -1052,7 +1052,7 @@ function populateSchedule(filter = 'all') {
 
 window.populateSchedule = populateSchedule;
 
-// Show workout modal
+// Show workout modal (follows original script.js layout)
 function showWorkoutModal(dayIndex, overrideDate = null) {
     window.currentWorkoutDayIndex = dayIndex;
     window.currentWorkoutOverrideDate = overrideDate;
@@ -1065,79 +1065,109 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
     if (!modal || !modalContent) return;
 
     const workouts = convertToGarminWorkout(training, dayIndex, overrideDate);
+
+    // Show scheduled date info (if override date is used)
+    const scheduledDateObj = overrideDate ? new Date(overrideDate) : new Date(training.date);
+    const scheduledDateStr = `${scheduledDateObj.getFullYear()}/${scheduledDateObj.getMonth() + 1}/${scheduledDateObj.getDate()}`;
+    const isOverride = overrideDate && overrideDate !== training.date;
+
+    // Get motivation quote for this training day
+    const quote = getMotivationQuote(dayIndex);
+
+    let html = `
+        <div class="modal-header">
+            <h3>Garmin 訓練計劃</h3>
+            <button class="modal-close" onclick="closeWorkoutModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="training-info">
+                <div class="training-date">${formatDate(training.date)}</div>
+                <span class="phase-badge phase-${training.phase}">${training.phase}</span>
+                <span class="intensity-badge intensity-${training.intensity}">${training.intensity}</span>
+            </div>
+            ${quote ? `<div class="modal-motivation-quote">💪 ${quote}</div>` : ''}
+            ${isOverride ? `<div class="scheduled-date-notice">📅 匯入日期：<strong>${scheduledDateStr}</strong>（今日）</div>` : ''}
+            <div class="training-description">${training.content}</div>
+    `;
+
+    if (workouts.length === 0) {
+        html += `<div class="no-workout">此日無訓練內容</div>`;
+    } else {
+        workouts.forEach((workout, idx) => {
+            const typeLabel = { swim: '游泳', bike: '自行車', run: '跑步' }[workout.type];
+            const typeColor = { swim: 'var(--swim-color)', bike: 'var(--bike-color)', run: 'var(--run-color)' }[workout.type];
+
+            const isBike = workout.type === 'bike';
+            const englishFilename = toEnglishFilename(workout.data.workoutName, workout.type);
+            // Store workout data for download functions
+            window[`workoutData_${idx}`] = workout.data;
+
+            html += `
+                <div class="workout-section" style="border-left: 4px solid ${typeColor}">
+                    <div class="workout-header">
+                        <img src="images/${workout.type === 'swim' ? 'swim' : workout.type === 'bike' ? 'cycling' : 'run'}.png" class="workout-type-icon" alt="${typeLabel}">
+                        <span class="workout-type-label">${typeLabel}</span>
+                    </div>
+                    <div class="workout-name">${workout.data.workoutName || ''}</div>
+                    <div class="workout-desc">${workout.data.description || ''}</div>
+                    <div class="workout-stats">
+                        <span>距離: ${workout.data.estimatedDistanceInMeters ? (workout.data.estimatedDistanceInMeters / 1000).toFixed(1) : '0'} km</span>
+                        <span>預估時間: ${workout.data.estimatedDurationInSecs ? Math.round(workout.data.estimatedDurationInSecs / 60) : 0} 分鐘</span>
+                    </div>
+                    ${renderStepsPreview(workout.data, workout.type)}
+                    <div class="workout-actions-row">
+                        <button class="btn-trainer btn-json" onclick="downloadWorkoutJson(${idx}, '${englishFilename}')">下載 JSON</button>
+                        ${isBike ? `<button class="btn-trainer btn-zwo" onclick="downloadWorkoutZWO(${idx}, '${englishFilename}')">下載 ZWO</button>
+                        <button class="btn-trainer btn-erg" onclick="downloadWorkoutERG(${idx}, '${englishFilename}')">下載 ERG</button>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // Check for stored token and user info
     const storedToken = getGarminToken();
     const hasValidToken = storedToken && !isTokenExpired(storedToken);
     const storedUser = getGarminUser();
 
-    let html = `
-        <div class="modal-header">
-            <h2>Day ${dayIndex + 1} - ${training.phase}</h2>
-            <span class="close-btn" onclick="closeWorkoutModal()">&times;</span>
-        </div>
-        <div class="modal-body">
-            <p class="workout-description">${training.content}</p>
-    `;
-
-    // Garmin Connect section
+    // Garmin Connect section - with token auto-login support
     html += `
-        <div class="garmin-section">
-            <h4>匯入 Garmin Connect</h4>
-            ${workouts.length > 0 ? `
-                <div id="garminLoginSection">
-                    ${hasValidToken ? `
-                        <div class="garmin-token-status">
-                            <div class="garmin-user-info" id="garminUserInfo">
-                                ${storedUser?.profileImageUrl ? `<img src="${storedUser.profileImageUrl}" alt="Profile" class="garmin-user-avatar">` : '<div class="garmin-user-avatar-placeholder">👤</div>'}
-                                <span class="garmin-user-name">${storedUser?.fullName || storedUser?.displayName || '已從瀏覽器取得登入憑證'}</span>
+            <div class="garmin-section">
+                <h4>匯入 Garmin Connect</h4>
+                ${workouts.length > 0 ? `
+                    <div id="garminLoginSection">
+                        ${hasValidToken ? `
+                            <div class="garmin-token-status">
+                                <div class="garmin-user-info" id="garminUserInfo">
+                                    ${storedUser?.profileImageUrl ? `<img src="${storedUser.profileImageUrl}" alt="Profile" class="garmin-user-avatar">` : '<div class="garmin-user-avatar-placeholder">👤</div>'}
+                                    <span class="garmin-user-name">${storedUser?.fullName || storedUser?.displayName || '已從瀏覽器取得登入憑證'}</span>
+                                </div>
+                                <button class="btn-garmin-import" onclick="importWithToken(${dayIndex})">
+                                    直接匯入訓練
+                                </button>
+                                <button class="btn-garmin-logout-small" onclick="clearTokenAndShowLogin()">
+                                    登出
+                                </button>
                             </div>
-                            <button class="btn-garmin-import" onclick="importWithToken(${dayIndex})">直接匯入訓練</button>
-                            <button class="btn-garmin-logout-small" onclick="clearTokenAndShowLogin()">登出</button>
-                        </div>
-                    ` : `
-                        <div class="garmin-login-form" id="garminLoginForm">
-                            <input type="email" id="garminEmail" placeholder="Garmin Email" class="garmin-input">
-                            <input type="password" id="garminPassword" placeholder="密碼" class="garmin-input">
-                            <button class="btn-garmin-import" onclick="directImportToGarmin(${dayIndex})">登入並匯入</button>
-                        </div>
-                    `}
-                </div>
+                        ` : `
+                            <div class="garmin-login-form" id="garminLoginForm">
+                                <input type="email" id="garminEmail" placeholder="Garmin Email" class="garmin-input">
+                                <input type="password" id="garminPassword" placeholder="密碼" class="garmin-input">
+                                <button class="btn-garmin-import" onclick="directImportToGarmin(${dayIndex})">
+                                    登入並匯入訓練
+                                </button>
+                            </div>
+                        `}
+                    </div>
+                ` : ''}
                 <div id="garminStatus" class="garmin-status"></div>
-            ` : '<p class="no-workout">今日無訓練可匯入</p>'}
+            </div>
+            <div class="modal-footer">
+                <button class="btn-close" onclick="closeWorkoutModal()">關閉</button>
+            </div>
         </div>
     `;
 
-    // Workout previews with detailed steps
-    workouts.forEach((workout, idx) => {
-        const sportLabel = { swim: '🏊 游泳', bike: '🚴 自行車', run: '🏃 跑步' }[workout.type];
-        const typeColor = { swim: 'var(--swim-color, #007AFF)', bike: 'var(--bike-color, #34C759)', run: 'var(--run-color, #FF9500)' }[workout.type];
-        const englishFilename = toEnglishFilename(workout.data.workoutName, workout.type);
-
-        // Store workout data for download functions
-        window[`workoutData_${idx}`] = workout.data;
-
-        // Calculate stats
-        const distanceKm = workout.data.estimatedDistanceInMeters ? (workout.data.estimatedDistanceInMeters / 1000).toFixed(1) : '0';
-        const durationMins = workout.data.estimatedDurationInSecs ? Math.round(workout.data.estimatedDurationInSecs / 60) : 0;
-
-        html += `
-            <div class="workout-card ${workout.type}" style="border-left: 4px solid ${typeColor}">
-                <h4>${sportLabel}</h4>
-                <div class="workout-name">${workout.data.workoutName || ''}</div>
-                <p class="workout-desc">${workout.data.description}</p>
-                <div class="workout-stats">
-                    <span class="stat-item">📏 距離: ${distanceKm} km</span>
-                    <span class="stat-item">⏱️ 預估時間: ${durationMins} 分鐘</span>
-                </div>
-                ${renderStepsPreview(workout.data, workout.type)}
-                <div class="workout-actions">
-                    <button class="btn-copy" onclick="copyWorkoutJson(${idx}, this)">複製 JSON</button>
-                    <button class="btn-download" onclick="downloadWorkoutJson(${idx}, '${englishFilename}')">下載 .json</button>
-                </div>
-            </div>
-        `;
-    });
-
-    html += '</div>';
     modalContent.innerHTML = html;
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
@@ -1193,6 +1223,208 @@ function downloadWorkoutJson(idx, filename) {
 }
 
 window.downloadWorkoutJson = downloadWorkoutJson;
+
+// ============================================
+// Trainer File Formats (ZWO, ERG)
+// ============================================
+
+// Convert Garmin workout to Zwift ZWO format (XML)
+function convertToZWO(workout) {
+    const steps = workout.workoutSegments[0]?.workoutSteps || [];
+    const FTP = TRAINING_PARAMS.FTP;
+
+    function powerToFTP(watts) {
+        return (watts / FTP).toFixed(2);
+    }
+
+    function getStepPower(step) {
+        if (step.targetValueOne && step.targetValueTwo) {
+            return (step.targetValueOne + step.targetValueTwo) / 2;
+        }
+        return FTP * 0.65;
+    }
+
+    function getStepPowerRange(step) {
+        if (step.targetValueOne && step.targetValueTwo) {
+            return { low: step.targetValueOne, high: step.targetValueTwo };
+        }
+        return { low: FTP * 0.55, high: FTP * 0.75 };
+    }
+
+    let zwoContent = `<workout_file>
+    <author>DTSwiss Ironman Taiwan 2026</author>
+    <name>${escapeXml(workout.workoutName)}</name>
+    <description>${escapeXml(workout.description || '')}</description>
+    <sportType>bike</sportType>
+    <workout>
+`;
+
+    steps.forEach(step => {
+        const stepType = step.stepType?.stepTypeKey;
+        const duration = step.endConditionValue || 300;
+        const isTime = step.endCondition?.conditionTypeKey === 'time';
+        const isDistance = step.endCondition?.conditionTypeKey === 'distance';
+
+        let durationSecs;
+        if (isTime) {
+            durationSecs = duration;
+        } else if (isDistance) {
+            durationSecs = Math.round(duration / 1000 * 120);
+        } else {
+            durationSecs = 300;
+        }
+
+        if (stepType === 'repeat' && step.workoutSteps) {
+            const reps = step.numberOfIterations || 1;
+            const childSteps = step.workoutSteps;
+
+            if (childSteps.length >= 2) {
+                const workStep = childSteps[0];
+                const restStep = childSteps[1];
+                const workDuration = workStep.endConditionValue || 300;
+                const restDuration = restStep.endConditionValue || 60;
+                const workIsTime = workStep.endCondition?.conditionTypeKey === 'time';
+                const restIsTime = restStep.endCondition?.conditionTypeKey === 'time';
+                let onDuration = workIsTime ? workDuration : Math.round(workDuration / 1000 * 120);
+                let offDuration = restIsTime ? restDuration : Math.round(restDuration / 1000 * 120);
+                const onPower = powerToFTP(getStepPower(workStep));
+                const offPower = powerToFTP(getStepPower(restStep));
+                zwoContent += `        <IntervalsT Repeat="${reps}" OnDuration="${onDuration}" OffDuration="${offDuration}" OnPower="${onPower}" OffPower="${offPower}"/>\n`;
+            }
+        } else if (stepType === 'warmup') {
+            const powerRange = getStepPowerRange(step);
+            zwoContent += `        <Warmup Duration="${durationSecs}" PowerLow="${powerToFTP(powerRange.low * 0.8)}" PowerHigh="${powerToFTP(powerRange.high)}"/>\n`;
+        } else if (stepType === 'cooldown') {
+            const powerRange = getStepPowerRange(step);
+            zwoContent += `        <Cooldown Duration="${durationSecs}" PowerLow="${powerToFTP(powerRange.high)}" PowerHigh="${powerToFTP(powerRange.low * 0.8)}"/>\n`;
+        } else if (stepType === 'interval' || stepType === 'active') {
+            const power = powerToFTP(getStepPower(step));
+            zwoContent += `        <SteadyState Duration="${durationSecs}" Power="${power}"/>\n`;
+        } else if (stepType === 'rest' || stepType === 'recovery') {
+            zwoContent += `        <SteadyState Duration="${durationSecs}" Power="0.50"/>\n`;
+        }
+    });
+
+    zwoContent += `    </workout>
+</workout_file>`;
+
+    return zwoContent;
+}
+
+// Convert Garmin workout to ERG/MRC format
+function convertToERG(workout) {
+    const steps = workout.workoutSegments[0]?.workoutSteps || [];
+    const FTP = TRAINING_PARAMS.FTP;
+
+    function getStepPower(step) {
+        if (step.targetValueOne && step.targetValueTwo) {
+            return Math.round((step.targetValueOne + step.targetValueTwo) / 2);
+        }
+        return Math.round(FTP * 0.65);
+    }
+
+    let ergContent = `[COURSE HEADER]
+VERSION = 2
+UNITS = ENGLISH
+DESCRIPTION = ${workout.description || workout.workoutName}
+FILE NAME = ${workout.workoutName}
+FTP = ${FTP}
+MINUTES WATTS
+[END COURSE HEADER]
+[COURSE DATA]
+`;
+
+    let currentTime = 0;
+
+    function processStep(step) {
+        const stepType = step.stepType?.stepTypeKey;
+        const duration = step.endConditionValue || 300;
+        const isTime = step.endCondition?.conditionTypeKey === 'time';
+        const isDistance = step.endCondition?.conditionTypeKey === 'distance';
+
+        let durationMins;
+        if (isTime) {
+            durationMins = duration / 60;
+        } else if (isDistance) {
+            durationMins = (duration / 1000) * 2;
+        } else {
+            durationMins = 5;
+        }
+
+        if (stepType === 'repeat' && step.workoutSteps) {
+            const reps = step.numberOfIterations || 1;
+            for (let i = 0; i < reps; i++) {
+                step.workoutSteps.forEach(childStep => processStep(childStep));
+            }
+        } else {
+            let power;
+            if (stepType === 'warmup') {
+                const startPower = Math.round(FTP * 0.45);
+                const endPower = getStepPower(step);
+                ergContent += `${currentTime.toFixed(2)}\t${startPower}\n`;
+                currentTime += durationMins;
+                ergContent += `${currentTime.toFixed(2)}\t${endPower}\n`;
+            } else if (stepType === 'cooldown') {
+                const startPower = getStepPower(step);
+                const endPower = Math.round(FTP * 0.40);
+                ergContent += `${currentTime.toFixed(2)}\t${startPower}\n`;
+                currentTime += durationMins;
+                ergContent += `${currentTime.toFixed(2)}\t${endPower}\n`;
+            } else if (stepType === 'rest' || stepType === 'recovery') {
+                power = Math.round(FTP * 0.50);
+                ergContent += `${currentTime.toFixed(2)}\t${power}\n`;
+                currentTime += durationMins;
+                ergContent += `${currentTime.toFixed(2)}\t${power}\n`;
+            } else {
+                power = getStepPower(step);
+                ergContent += `${currentTime.toFixed(2)}\t${power}\n`;
+                currentTime += durationMins;
+                ergContent += `${currentTime.toFixed(2)}\t${power}\n`;
+            }
+        }
+    }
+
+    steps.forEach(step => processStep(step));
+    ergContent += `[END COURSE DATA]`;
+
+    return ergContent;
+}
+
+// Download workout as ZWO file
+function downloadWorkoutZWO(idx, filename) {
+    const workout = window[`workoutData_${idx}`];
+    if (!workout) return;
+    const zwo = convertToZWO(workout);
+    const blob = new Blob([zwo], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}.zwo`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+window.downloadWorkoutZWO = downloadWorkoutZWO;
+
+// Download workout as ERG file
+function downloadWorkoutERG(idx, filename) {
+    const workout = window[`workoutData_${idx}`];
+    if (!workout) return;
+    const erg = convertToERG(workout);
+    const blob = new Blob([erg], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '_')}.erg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+window.downloadWorkoutERG = downloadWorkoutERG;
 
 // ============================================
 // Workout Steps Visualization

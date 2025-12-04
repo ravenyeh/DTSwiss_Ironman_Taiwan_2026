@@ -327,9 +327,21 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
 
         const data = await response.json();
 
+        // Debug: 顯示伺服器返回的完整數據
+        console.log('Server response:', data);
+        updateGarminStatus(`[5/5] 伺服器回應: success=${data.success}, hasToken=${!!data.oauth2Token}, hasUser=${!!data.user}`, false);
+        await new Promise(r => setTimeout(r, 1000)); // 等1秒讓用戶看到
+
         if (data.success) {
-            if (data.oauth2Token) setGarminToken(data.oauth2Token);
-            if (data.user) setGarminUser(data.user);
+            if (data.oauth2Token) {
+                setGarminToken(data.oauth2Token);
+                updateGarminStatus('Token 已保存', false);
+            }
+            if (data.user) {
+                setGarminUser(data.user);
+                updateGarminStatus(`用戶 ${data.user.displayName || data.user.fullName} 已保存`, false);
+            }
+            await new Promise(r => setTimeout(r, 500));
             updateGarminStatus('✅ ' + (data.message || '匯入成功！'), false);
 
             setTimeout(() => {

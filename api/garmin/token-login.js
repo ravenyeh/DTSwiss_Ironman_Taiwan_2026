@@ -45,18 +45,15 @@ module.exports = async (req, res) => {
 
         // Verify the token works by getting user profile
         const userProfile = await GC.getUserProfile();
-        console.log('User profile:', JSON.stringify(userProfile, null, 2));
 
-        // Try to fetch social profile using displayName
+        // Try to fetch social profile for fullName and avatar
         let socialProfile = null;
         if (userProfile.displayName) {
             try {
                 const socialUrl = `https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile/${userProfile.displayName}`;
-                console.log('Fetching social profile from:', socialUrl);
                 socialProfile = await GC.get(socialUrl);
-                console.log('Social profile:', JSON.stringify(socialProfile, null, 2));
             } catch (e) {
-                console.log('Social profile fetch error:', e.message);
+                // Social profile fetch is optional, continue without it
             }
         }
 
@@ -87,7 +84,6 @@ module.exports = async (req, res) => {
             fullName: socialProfile?.fullName || socialProfile?.userProfileFullName || userProfile.fullName || null,
             profileImageUrl: socialProfile?.profileImageUrlSmall || userProfile.profileImageUrlSmall || null
         };
-        console.log('Returning user:', JSON.stringify(user, null, 2));
 
         return res.status(200).json({
             success: true,

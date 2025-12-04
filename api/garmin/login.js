@@ -88,8 +88,9 @@ module.exports = async (req, res) => {
             user: user,
             oauth2Token: oauth2Token,
             debug: {
-                userProfileKeys: Object.keys(userProfile),
-                userProfile: userProfile
+                userProfile: userProfile,
+                socialProfile: socialProfile,
+                socialProfileFetched: socialProfile !== null
             }
         });
 

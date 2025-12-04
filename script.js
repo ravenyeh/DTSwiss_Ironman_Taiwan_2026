@@ -2123,7 +2123,7 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
                     <div id="garminLoginSection">
                         ${hasValidToken ? `
                             <div class="garmin-token-status">
-                                <span class="token-indicator">🔑 已儲存登入憑證</span>
+                                <span class="token-indicator">🔑 已從瀏覽器取得登入憑證</span>
                                 <button class="btn-garmin-import" onclick="importWithToken(${dayIndex})">
                                     直接匯入訓練
                                 </button>

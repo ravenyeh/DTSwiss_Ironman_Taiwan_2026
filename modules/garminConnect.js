@@ -263,50 +263,40 @@ export async function importAllToGarmin(dayIndex, trainingData, convertToGarminW
 
 // Direct import to Garmin (login + import in one request)
 export async function directImportToGarmin(dayIndex, trainingData, convertToGarminWorkout, showWorkoutModal) {
-    // Step 1: 檢查輸入
-    updateGarminStatus('[1/5] 檢查輸入...', false);
     const email = document.getElementById('garminEmail')?.value;
     const password = document.getElementById('garminPassword')?.value;
 
     if (!email || !password) {
-        updateGarminStatus('[1/5] 錯誤：請輸入 Email 和密碼', true);
+        updateGarminStatus('請輸入 Email 和密碼', true);
         return;
     }
 
-    // Step 2: 取得訓練資料
-    updateGarminStatus('[2/5] 取得訓練資料...', false);
     const training = trainingData[dayIndex];
     if (!training) {
-        updateGarminStatus(`[2/5] 錯誤：找不到 dayIndex=${dayIndex} 的訓練資料`, true);
+        updateGarminStatus('找不到訓練資料', true);
         return;
     }
 
-    // Step 3: 生成 Garmin workout
-    updateGarminStatus('[3/5] 生成訓練內容...', false);
     const overrideDate = window.currentWorkoutOverrideDate;
     let workouts;
     try {
         workouts = convertToGarminWorkout(training, dayIndex, overrideDate);
     } catch (err) {
-        updateGarminStatus(`[3/5] 錯誤：生成訓練失敗 - ${err.message}`, true);
+        updateGarminStatus(`生成訓練失敗：${err.message}`, true);
         return;
     }
 
     if (!workouts || workouts.length === 0) {
-        updateGarminStatus('[3/5] 錯誤：沒有訓練可匯入（workouts 為空）', true);
+        updateGarminStatus('沒有訓練可匯入', true);
         return;
     }
-    updateGarminStatus(`[3/5] 生成了 ${workouts.length} 個訓練`, false);
 
-    // Step 4: 準備 payload
-    updateGarminStatus('[4/5] 準備匯入資料...', false);
     const workoutPayloads = workouts.map(w => ({
         workout: w.data,
         scheduledDate: w.data.scheduledDate
     }));
 
-    // Step 5: 發送到伺服器
-    updateGarminStatus('[5/5] 登入並匯入中...', false);
+    updateGarminStatus('登入並匯入中...', false);
     try {
         const response = await fetch('/api/garmin/import', {
             method: 'POST',
@@ -318,10 +308,9 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
             })
         });
 
-        // 檢查 HTTP 狀態
         if (!response.ok) {
             const text = await response.text();
-            updateGarminStatus(`[5/5] HTTP ${response.status}: ${text.substring(0, 200)}`, true);
+            updateGarminStatus(`伺服器錯誤 (${response.status})`, true);
             return;
         }
 
@@ -344,13 +333,12 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
                 }
             }, 1500);
         } else {
-            // 顯示錯誤摘要
             const summary = data.summary || {};
             const imported = summary.imported || 0;
             const total = summary.total || 0;
             let errorMsg = `匯入失敗 (${imported}/${total})`;
             if (data.results && data.results[0]) {
-                errorMsg += `: ${data.results[0].error}`;
+                errorMsg += `：${data.results[0].error}`;
             }
             if (data.oauth2Token) {
                 errorMsg += '\n（登錄成功，憑證已保存）';
@@ -366,47 +354,41 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
             }, 2000);
         }
     } catch (error) {
-        updateGarminStatus(`[5/5] 連線錯誤：${error.message}`, true);
+        updateGarminStatus(`連線錯誤：${error.message}`, true);
     }
 }
 
 // Import using stored token
 export async function importWithToken(dayIndex, trainingData, convertToGarminWorkout, clearTokenAndShowLogin) {
-    // Step 1: 驗證 token
-    updateGarminStatus('[1/4] 驗證登入憑證...', false);
+    updateGarminStatus('驗證登入憑證...', false);
     const user = await tryTokenLogin();
     if (!user) {
-        updateGarminStatus('[1/4] 錯誤：登入憑證已過期，請重新登入', true);
+        updateGarminStatus('登入憑證已過期，請重新登入', true);
         clearTokenAndShowLogin();
         return;
     }
 
-    // Step 2: 取得訓練資料
-    updateGarminStatus(`[2/4] 已登入：${user.displayName}，取得訓練資料...`, false);
     const training = trainingData[dayIndex];
     if (!training) {
-        updateGarminStatus(`[2/4] 錯誤：找不到 dayIndex=${dayIndex} 的訓練資料`, true);
+        updateGarminStatus('找不到訓練資料', true);
         return;
     }
 
-    // Step 3: 生成 workout
-    updateGarminStatus('[3/4] 生成訓練內容...', false);
     const overrideDate = window.currentWorkoutOverrideDate;
     let workouts;
     try {
         workouts = convertToGarminWorkout(training, dayIndex, overrideDate);
     } catch (err) {
-        updateGarminStatus(`[3/4] 錯誤：生成訓練失敗 - ${err.message}`, true);
+        updateGarminStatus(`生成訓練失敗：${err.message}`, true);
         return;
     }
 
     if (!workouts || workouts.length === 0) {
-        updateGarminStatus('[3/4] 錯誤：沒有訓練可匯入（workouts 為空）', true);
+        updateGarminStatus('沒有訓練可匯入', true);
         return;
     }
 
-    // Step 4: 匯入
-    updateGarminStatus(`[4/4] 匯入 ${workouts.length} 個訓練...`, false);
+    updateGarminStatus(`匯入 ${workouts.length} 個訓練中...`, false);
     await importAllToGarmin(dayIndex, trainingData, convertToGarminWorkout);
 }
 

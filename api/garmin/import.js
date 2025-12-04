@@ -128,7 +128,7 @@ module.exports = async (req, res) => {
                     const socialUrl = `https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile/${userProfile.displayName}`;
                     socialProfile = await GC.get(socialUrl);
                 } catch (e) {
-                    console.log('Social profile fetch error:', e.message);
+                    // Social profile fetch is optional, continue without it
                 }
             }
 
@@ -138,7 +138,7 @@ module.exports = async (req, res) => {
                 profileImageUrl: socialProfile?.profileImageUrlSmall || userProfile.profileImageUrlSmall || null
             };
         } catch (e) {
-            console.log('User profile fetch error:', e.message);
+            // User profile fetch is optional, continue without it
         }
 
         return res.status(200).json({

@@ -1354,52 +1354,7 @@ function formatStepTarget(step, sportType) {
     return result;
 }
 
-// Format seconds to MM:SS
-function formatPace(seconds) {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
-
-// Convert workout name to English filename
-function toEnglishFilename(workoutName, sportType) {
-    // Extract day number
-    const dayMatch = workoutName.match(/Day\s*(\d+)/i);
-    const dayNum = dayMatch ? dayMatch[1] : '';
-
-    // Sport type mapping
-    const sportMap = {
-        'swim': 'Swim',
-        'bike': 'Bike',
-        'run': 'Run'
-    };
-    const sport = sportMap[sportType] || 'Workout';
-
-    // Phase mapping
-    const phaseMap = {
-        '基礎期': 'Base',
-        '建構期': 'Build',
-        '強化期': 'Build',
-        '巔峰期': 'Peak',
-        '調整期': 'Taper',
-        '比賽週': 'Race'
-    };
-    let phase = '';
-    for (const [cn, en] of Object.entries(phaseMap)) {
-        if (workoutName.includes(cn)) {
-            phase = en;
-            break;
-        }
-    }
-
-    // Build filename
-    const parts = [];
-    if (dayNum) parts.push(`Day${dayNum}`);
-    parts.push(sport);
-    if (phase) parts.push(phase);
-
-    return parts.join('_') || 'Workout';
-}
+// Note: formatPace and toEnglishFilename are imported from utils.js
 
 // Countdown function
 function updateCountdown() {

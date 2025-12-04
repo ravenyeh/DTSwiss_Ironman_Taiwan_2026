@@ -2772,9 +2772,12 @@ async function directImportToGarmin(dayIndex) {
         const data = await response.json();
 
         if (data.success) {
-            // Store token if returned
+            // Store token and user info if returned
             if (data.oauth2Token) {
                 setGarminToken(data.oauth2Token);
+            }
+            if (data.user) {
+                setGarminUser(data.user);
             }
             updateGarminStatus(data.message || '匯入成功！', false);
             // Refresh modal to show token-based UI

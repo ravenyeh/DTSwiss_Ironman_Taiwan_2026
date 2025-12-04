@@ -318,11 +318,30 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
             })
         });
 
+        // 檢查 HTTP 狀態
+        if (!response.ok) {
+            const text = await response.text();
+            updateGarminStatus(`[5/5] HTTP ${response.status}: ${text.substring(0, 200)}`, true);
+            return;
+        }
+
         const data = await response.json();
 
+        // Debug: 顯示伺服器返回的完整數據
+        console.log('Server response:', data);
+        updateGarminStatus(`[5/5] 伺服器回應: success=${data.success}, hasToken=${!!data.oauth2Token}, hasUser=${!!data.user}`, false);
+        await new Promise(r => setTimeout(r, 1000)); // 等1秒讓用戶看到
+
         if (data.success) {
-            if (data.oauth2Token) setGarminToken(data.oauth2Token);
-            if (data.user) setGarminUser(data.user);
+            if (data.oauth2Token) {
+                setGarminToken(data.oauth2Token);
+                updateGarminStatus('Token 已保存', false);
+            }
+            if (data.user) {
+                setGarminUser(data.user);
+                updateGarminStatus(`用戶 ${data.user.displayName || data.user.fullName} 已保存`, false);
+            }
+            await new Promise(r => setTimeout(r, 500));
             updateGarminStatus('✅ ' + (data.message || '匯入成功！'), false);
 
             setTimeout(() => {
@@ -332,9 +351,9 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
                 }
             }, 1500);
         } else {
-            let errorMsg = data.error || '匯入失敗';
-            if (data.detail) errorMsg += ' - ' + data.detail;
-            updateGarminStatus('[5/5] 伺服器錯誤：' + errorMsg, true);
+            // 顯示完整錯誤
+            const fullError = JSON.stringify(data, null, 2);
+            updateGarminStatus(`[5/5] 失敗: ${fullError}`, true);
         }
     } catch (error) {
         updateGarminStatus(`[5/5] 連線錯誤：${error.message}`, true);

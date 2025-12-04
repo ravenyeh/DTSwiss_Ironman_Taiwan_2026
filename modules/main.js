@@ -414,7 +414,8 @@ function displayTodayTraining() {
         }
 
         if (todayActions && trainingIndex >= 0 && (training.swim || training.bike || training.run)) {
-            const todayISO = today.toISOString().split('T')[0];
+            // Use local timezone (Asia/Taipei) instead of UTC
+            const todayISO = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
             todayActions.innerHTML = `<button class="btn-today-workout" onclick="showWorkoutModal(${trainingIndex}${isRandom ? `, '${todayISO}'` : ''})"><span class="btn-icon">📋</span>查看訓練 / 匯入 Garmin</button>`;
             todayActions.style.display = 'block';
         } else if (todayActions) {

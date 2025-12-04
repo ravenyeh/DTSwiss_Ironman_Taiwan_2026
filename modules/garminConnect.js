@@ -327,23 +327,16 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
 
         const data = await response.json();
 
-        // Debug: 顯示伺服器返回的完整數據
-        console.log('Server response:', data);
-        updateGarminStatus(`[5/5] 伺服器回應: success=${data.success}, hasToken=${!!data.oauth2Token}, hasUser=${!!data.user}`, false);
-        await new Promise(r => setTimeout(r, 1000)); // 等1秒讓用戶看到
+        // 無論成功失敗，都保存 token 和 user（如果有的話）
+        if (data.oauth2Token) {
+            setGarminToken(data.oauth2Token);
+        }
+        if (data.user) {
+            setGarminUser(data.user);
+        }
 
         if (data.success) {
-            if (data.oauth2Token) {
-                setGarminToken(data.oauth2Token);
-                updateGarminStatus('Token 已保存', false);
-            }
-            if (data.user) {
-                setGarminUser(data.user);
-                updateGarminStatus(`用戶 ${data.user.displayName || data.user.fullName} 已保存`, false);
-            }
-            await new Promise(r => setTimeout(r, 500));
             updateGarminStatus('✅ ' + (data.message || '匯入成功！'), false);
-
             setTimeout(() => {
                 const currentIndex = window.currentWorkoutDayIndex;
                 if (currentIndex !== undefined && showWorkoutModal) {
@@ -351,9 +344,26 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
                 }
             }, 1500);
         } else {
-            // 顯示完整錯誤
-            const fullError = JSON.stringify(data, null, 2);
-            updateGarminStatus(`[5/5] 失敗: ${fullError}`, true);
+            // 顯示錯誤摘要
+            const summary = data.summary || {};
+            const imported = summary.imported || 0;
+            const total = summary.total || 0;
+            let errorMsg = `匯入失敗 (${imported}/${total})`;
+            if (data.results && data.results[0]) {
+                errorMsg += `: ${data.results[0].error}`;
+            }
+            if (data.oauth2Token) {
+                errorMsg += '\n（登錄成功，憑證已保存）';
+            }
+            updateGarminStatus(errorMsg, true);
+
+            // 刷新 modal 以顯示已登錄狀態
+            setTimeout(() => {
+                const currentIndex = window.currentWorkoutDayIndex;
+                if (currentIndex !== undefined && showWorkoutModal) {
+                    showWorkoutModal(currentIndex, window.currentWorkoutOverrideDate);
+                }
+            }, 2000);
         }
     } catch (error) {
         updateGarminStatus(`[5/5] 連線錯誤：${error.message}`, true);

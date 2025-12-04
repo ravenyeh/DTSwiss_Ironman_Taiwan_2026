@@ -116,6 +116,31 @@ module.exports = async (req, res) => {
         // Get OAuth2 token for client-side storage
         const oauth2Token = GC.client?.oauth2Token || null;
 
+        // Get user profile and social profile
+        let user = null;
+        try {
+            const userProfile = await GC.getUserProfile();
+
+            // Try to fetch social profile for fullName and avatar
+            let socialProfile = null;
+            if (userProfile.displayName) {
+                try {
+                    const socialUrl = `https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile/${userProfile.displayName}`;
+                    socialProfile = await GC.get(socialUrl);
+                } catch (e) {
+                    console.log('Social profile fetch error:', e.message);
+                }
+            }
+
+            user = {
+                displayName: userProfile.displayName || email.split('@')[0],
+                fullName: socialProfile?.fullName || socialProfile?.userProfileFullName || userProfile.fullName || null,
+                profileImageUrl: socialProfile?.profileImageUrlSmall || userProfile.profileImageUrlSmall || null
+            };
+        } catch (e) {
+            console.log('User profile fetch error:', e.message);
+        }
+
         return res.status(200).json({
             success: successCount > 0,
             message: message,
@@ -125,7 +150,8 @@ module.exports = async (req, res) => {
                 imported: successCount,
                 scheduled: scheduledCount
             },
-            oauth2Token: oauth2Token
+            oauth2Token: oauth2Token,
+            user: user
         });
 
     } catch (error) {

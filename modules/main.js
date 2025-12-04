@@ -1936,24 +1936,80 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ============================================
+// Debug Logger - 打開 debug.html 查看詳細 log
+// ============================================
+function debugLog(message, type = 'info') {
+    const logs = JSON.parse(localStorage.getItem('debug_logs') || '[]');
+    logs.push({
+        time: new Date().toLocaleString('zh-TW'),
+        type: type,
+        message: message
+    });
+    if (logs.length > 50) logs.shift();
+    localStorage.setItem('debug_logs', JSON.stringify(logs));
+}
+
+// ============================================
 // Garmin Functions (bound after all function definitions)
 // ============================================
 window.garminLogin = () => garminLogin(showWorkoutModal);
 window.garminLogout = () => garminLogout(showWorkoutModal);
+
 window.directImportToGarmin = async (dayIndex) => {
+    debugLog(`=== directImportToGarmin START ===`);
+    debugLog(`dayIndex: ${dayIndex}`);
+    debugLog(`trainingData type: ${typeof trainingData}, length: ${trainingData?.length}`);
+    debugLog(`convertToGarminWorkout type: ${typeof convertToGarminWorkout}`);
+    debugLog(`showWorkoutModal type: ${typeof showWorkoutModal}`);
+
     try {
-        alert(`DEBUG: directImportToGarmin called with dayIndex=${dayIndex}, trainingData=${typeof trainingData}, convertToGarminWorkout=${typeof convertToGarminWorkout}, showWorkoutModal=${typeof showWorkoutModal}`);
+        const training = trainingData[dayIndex];
+        debugLog(`training phase: ${training?.phase}, date: ${training?.date}`);
+        debugLog(`training content: ${training?.content?.substring(0, 100)}`);
+
+        const workouts = convertToGarminWorkout(training, dayIndex, window.currentWorkoutOverrideDate);
+        debugLog(`workouts generated: ${workouts?.length}`);
+        if (workouts && workouts.length > 0) {
+            workouts.forEach((w, i) => {
+                debugLog(`  [${i}] type: ${w.type}, name: ${w.data?.workoutName}`);
+            });
+        }
+
+        debugLog(`Calling imported directImportToGarmin...`);
         await directImportToGarmin(dayIndex, trainingData, convertToGarminWorkout, showWorkoutModal);
+        debugLog(`=== directImportToGarmin SUCCESS ===`);
     } catch (err) {
-        alert(`directImportToGarmin ERROR: ${err.message}\n\nStack: ${err.stack}`);
+        debugLog(`ERROR: ${err.message}`, 'error');
+        debugLog(`Stack: ${err.stack}`, 'error');
     }
 };
+
 window.importWithToken = async (dayIndex) => {
+    debugLog(`=== importWithToken START ===`);
+    debugLog(`dayIndex: ${dayIndex}`);
+    debugLog(`trainingData type: ${typeof trainingData}, length: ${trainingData?.length}`);
+    debugLog(`convertToGarminWorkout type: ${typeof convertToGarminWorkout}`);
+
     try {
-        alert(`DEBUG: importWithToken called with dayIndex=${dayIndex}, trainingData=${typeof trainingData}, convertToGarminWorkout=${typeof convertToGarminWorkout}`);
+        const training = trainingData[dayIndex];
+        debugLog(`training phase: ${training?.phase}, date: ${training?.date}`);
+        debugLog(`training content: ${training?.content?.substring(0, 100)}`);
+
+        const workouts = convertToGarminWorkout(training, dayIndex, window.currentWorkoutOverrideDate);
+        debugLog(`workouts generated: ${workouts?.length}`);
+        if (workouts && workouts.length > 0) {
+            workouts.forEach((w, i) => {
+                debugLog(`  [${i}] type: ${w.type}, name: ${w.data?.workoutName}`);
+            });
+        }
+
+        debugLog(`Calling imported importWithToken...`);
         await importWithToken(dayIndex, trainingData, convertToGarminWorkout, () => clearTokenAndShowLogin(showWorkoutModal));
+        debugLog(`=== importWithToken SUCCESS ===`);
     } catch (err) {
-        alert(`importWithToken ERROR: ${err.message}\n\nStack: ${err.stack}`);
+        debugLog(`ERROR: ${err.message}`, 'error');
+        debugLog(`Stack: ${err.stack}`, 'error');
     }
 };
+
 window.clearTokenAndShowLogin = () => clearTokenAndShowLogin(showWorkoutModal);

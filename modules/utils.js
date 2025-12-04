@@ -16,6 +16,9 @@ export function formatPace(seconds) {
 
 // Convert workout name to English filename
 export function toEnglishFilename(workoutName, sportType) {
+    // Handle undefined/null workoutName
+    if (!workoutName) workoutName = '';
+
     const sportPrefix = {
         swim: 'swim',
         bike: 'bike',

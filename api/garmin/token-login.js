@@ -45,8 +45,20 @@ module.exports = async (req, res) => {
 
         // Verify the token works by getting user profile
         const userProfile = await GC.getUserProfile();
-        console.log('User profile keys:', Object.keys(userProfile));
         console.log('User profile:', JSON.stringify(userProfile, null, 2));
+
+        // Try to fetch social profile using displayName
+        let socialProfile = null;
+        if (userProfile.displayName) {
+            try {
+                const socialUrl = `https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile/${userProfile.displayName}`;
+                console.log('Fetching social profile from:', socialUrl);
+                socialProfile = await GC.get(socialUrl);
+                console.log('Social profile:', JSON.stringify(socialProfile, null, 2));
+            } catch (e) {
+                console.log('Social profile fetch error:', e.message);
+            }
+        }
 
         // Generate session ID
         const sessionId = `gc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -69,11 +81,11 @@ module.exports = async (req, res) => {
         // Get refreshed token if available
         const refreshedToken = GC.client?.oauth2Token || oauth2Token;
 
-        // Build user object from userProfile (social profile fetch is unreliable)
+        // Build user object - prefer social profile data if available
         const user = {
             displayName: userProfile.displayName || 'Garmin User',
-            fullName: userProfile.fullName || userProfile.userName || null,
-            profileImageUrl: userProfile.profileImageUrlSmall || userProfile.profileImageUrl || null
+            fullName: socialProfile?.fullName || socialProfile?.userProfileFullName || userProfile.fullName || null,
+            profileImageUrl: socialProfile?.profileImageUrlSmall || userProfile.profileImageUrlSmall || null
         };
         console.log('Returning user:', JSON.stringify(user, null, 2));
 

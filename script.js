@@ -2480,9 +2480,15 @@ function clearGarminToken() {
 
 // Check if token is expired
 function isTokenExpired(token) {
-    if (!token || !token.expires) return true;
-    // Add 60 second buffer
-    return token.expires < (Date.now() + 60000);
+    if (!token) return true;
+
+    // Check expires_at (seconds) or expires (milliseconds)
+    const expiresAt = token.expires_at || (token.expires ? token.expires / 1000 : null);
+    if (!expiresAt) return true;
+
+    // Add 60 second buffer, compare in seconds
+    const nowInSeconds = Date.now() / 1000;
+    return expiresAt < (nowInSeconds + 60);
 }
 
 // Try to login with stored token

@@ -65,35 +65,42 @@ function extractWorkoutPart(content, sport) {
 
 // Format a workout step with required Garmin API fields
 function formatStep(step) {
+    const isRepeatGroup = step.stepType?.stepTypeKey === 'repeat' && step.workoutSteps;
+
     const formatted = {
-        stepId: step.stepId || stepIdCounter++,
+        type: isRepeatGroup ? 'RepeatGroupDTO' : 'ExecutableStepDTO',
+        stepId: stepIdCounter++,
         stepOrder: step.stepOrder || 1,
-        stepType: step.stepType || { stepTypeId: 3, stepTypeKey: 'interval' }
+        childStepId: null,
+        stepType: step.stepType || { stepTypeId: 3, stepTypeKey: 'interval' },
+        endCondition: step.endCondition,
+        targetType: step.targetType || { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
     };
 
-    if (step.endCondition) {
-        formatted.endCondition = step.endCondition;
-        if (step.endConditionValue !== undefined) {
-            formatted.endConditionValue = step.endConditionValue;
-        }
+    if (step.endConditionValue !== undefined) {
+        formatted.endConditionValue = step.endConditionValue;
     }
-
-    if (step.targetType) {
-        formatted.targetType = step.targetType;
-        if (step.targetValueOne !== undefined) formatted.targetValueOne = step.targetValueOne;
-        if (step.targetValueTwo !== undefined) formatted.targetValueTwo = step.targetValueTwo;
+    if (step.targetValueOne !== undefined) {
+        formatted.targetValueOne = step.targetValueOne;
     }
-
+    if (step.targetValueTwo !== undefined) {
+        formatted.targetValueTwo = step.targetValueTwo;
+    }
     if (step.secondaryTargetType) {
         formatted.secondaryTargetType = step.secondaryTargetType;
         formatted.secondaryTargetValueOne = step.secondaryTargetValueOne;
         formatted.secondaryTargetValueTwo = step.secondaryTargetValueTwo;
     }
+    if (step.description) {
+        formatted.description = step.description;
+    }
 
-    if (step.repeatType) {
-        formatted.repeatType = step.repeatType;
-        formatted.repeatValue = step.repeatValue;
+    // Handle repeat groups - MUST remove incompatible fields
+    if (isRepeatGroup) {
+        formatted.numberOfIterations = step.numberOfIterations || 2;
         formatted.workoutSteps = step.workoutSteps.map(s => formatStep(s));
+        delete formatted.endCondition;
+        delete formatted.targetType;
     }
 
     return formatted;
@@ -175,7 +182,7 @@ function generateSwimSteps(totalDistance, content) {
                 },
                 {
                     stepOrder: 2,
-                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    stepType: { stepTypeId: 5, stepTypeKey: 'rest' },
                     endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
                     endConditionValue: restTime,
                     targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
@@ -223,7 +230,7 @@ function generateSwimSteps(totalDistance, content) {
                 },
                 {
                     stepOrder: 2,
-                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    stepType: { stepTypeId: 5, stepTypeKey: 'rest' },
                     endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
                     endConditionValue: 20,
                     targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
@@ -391,7 +398,7 @@ function generateBikeSteps(totalDistance, content) {
                 },
                 {
                     stepOrder: 2,
-                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    stepType: { stepTypeId: 5, stepTypeKey: 'rest' },
                     endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
                     endConditionValue: 60,
                     ...z1Power
@@ -415,7 +422,7 @@ function generateBikeSteps(totalDistance, content) {
                 },
                 {
                     stepOrder: 2,
-                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    stepType: { stepTypeId: 5, stepTypeKey: 'rest' },
                     endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
                     endConditionValue: 300,
                     ...z1Power
@@ -460,7 +467,7 @@ function generateBikeSteps(totalDistance, content) {
                 },
                 {
                     stepOrder: 2,
-                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    stepType: { stepTypeId: 5, stepTypeKey: 'rest' },
                     endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
                     endConditionValue: 90,
                     ...z1Power
@@ -483,7 +490,7 @@ function generateBikeSteps(totalDistance, content) {
                 },
                 {
                     stepOrder: 2,
-                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    stepType: { stepTypeId: 5, stepTypeKey: 'rest' },
                     endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
                     endConditionValue: 600,
                     ...z1Power
@@ -686,7 +693,7 @@ function generateRunSteps(totalDistance, content) {
                 },
                 {
                     stepOrder: 2,
-                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    stepType: { stepTypeId: 5, stepTypeKey: 'rest' },
                     endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
                     endConditionValue: 100,
                     targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
@@ -709,7 +716,7 @@ function generateRunSteps(totalDistance, content) {
                 },
                 {
                     stepOrder: 2,
-                    stepType: { stepTypeId: 4, stepTypeKey: 'rest' },
+                    stepType: { stepTypeId: 5, stepTypeKey: 'rest' },
                     endCondition: { conditionTypeId: 2, conditionTypeKey: 'time' },
                     endConditionValue: restTime,
                     targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
@@ -923,7 +930,7 @@ function generateRunSteps(totalDistance, content) {
 function convertToGarminWorkout(training, index, overrideDate = null) {
     const workouts = [];
     const sportTypes = {
-        swim: { sportTypeId: 4, sportTypeKey: 'swimming_pool' },
+        swim: { sportTypeId: 5, sportTypeKey: 'pool_swimming' },
         bike: { sportTypeId: 2, sportTypeKey: 'cycling' },
         run: { sportTypeId: 1, sportTypeKey: 'running' }
     };

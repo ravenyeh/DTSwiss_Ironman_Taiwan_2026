@@ -71,7 +71,11 @@ module.exports = async (req, res) => {
             success: true,
             sessionId: sessionId,
             user: user,
-            oauth2Token: oauth2Token
+            oauth2Token: oauth2Token,
+            debug: {
+                userProfileKeys: Object.keys(userProfile),
+                userProfile: userProfile
+            }
         });
 
     } catch (error) {

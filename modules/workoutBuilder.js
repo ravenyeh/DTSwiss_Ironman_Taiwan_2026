@@ -7,6 +7,34 @@ import {
     parseStructuredLongRun, parseStructuredWorkout
 } from './paceZones.js';
 
+// Garmin API Swim Stroke Types
+export const SWIM_STROKE_TYPES = {
+    any_stroke: { strokeTypeId: 1, strokeTypeKey: 'any_stroke' },
+    backstroke: { strokeTypeId: 2, strokeTypeKey: 'backstroke' },
+    breaststroke: { strokeTypeId: 3, strokeTypeKey: 'breaststroke' },
+    drill: { strokeTypeId: 4, strokeTypeKey: 'drill' },
+    fly: { strokeTypeId: 5, strokeTypeKey: 'fly' },
+    free: { strokeTypeId: 6, strokeTypeKey: 'free' },
+    individual_medley: { strokeTypeId: 7, strokeTypeKey: 'individual_medley' },
+    mixed: { strokeTypeId: 8, strokeTypeKey: 'mixed' }
+};
+
+// Garmin API Swim Drill Types
+export const SWIM_DRILL_TYPES = {
+    kick: { drillTypeId: 1, drillTypeKey: 'kick' },
+    pull: { drillTypeId: 2, drillTypeKey: 'pull' },
+    drill: { drillTypeId: 3, drillTypeKey: 'drill' }
+};
+
+// Garmin API Swim Equipment Types
+export const SWIM_EQUIPMENT_TYPES = {
+    fins: { equipmentTypeId: 1, equipmentTypeKey: 'fins' },
+    kickboard: { equipmentTypeId: 2, equipmentTypeKey: 'kickboard' },
+    paddles: { equipmentTypeId: 3, equipmentTypeKey: 'paddles' },
+    pull_buoy: { equipmentTypeId: 4, equipmentTypeKey: 'pull_buoy' },
+    snorkel: { equipmentTypeId: 5, equipmentTypeKey: 'snorkel' }
+};
+
 let stepIdCounter = 1;
 
 export function resetStepIdCounter() {
@@ -57,6 +85,16 @@ export function formatStep(step) {
     }
     if (step.description) {
         formatted.description = step.description;
+    }
+    // Swim-specific fields
+    if (step.strokeType) {
+        formatted.strokeType = step.strokeType;
+    }
+    if (step.drillType) {
+        formatted.drillType = step.drillType;
+    }
+    if (step.equipmentType) {
+        formatted.equipmentType = step.equipmentType;
     }
 
     // Handle repeat groups - MUST remove incompatible fields
@@ -124,6 +162,7 @@ export function generateSwimSteps(totalDistance, content) {
                 stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
                 endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
                 endConditionValue: warmupDistance,
+                strokeType: SWIM_STROKE_TYPES.free,
                 ...warmupPace
             });
         }
@@ -138,6 +177,7 @@ export function generateSwimSteps(totalDistance, content) {
                     stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
                     endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
                     endConditionValue: distance,
+                    strokeType: SWIM_STROKE_TYPES.free,
                     ...mainPace
                 },
                 {
@@ -156,6 +196,7 @@ export function generateSwimSteps(totalDistance, content) {
                 stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
                 endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
                 endConditionValue: cooldownDistance,
+                strokeType: SWIM_STROKE_TYPES.free,
                 ...recoveryPace
             });
         }
@@ -171,6 +212,7 @@ export function generateSwimSteps(totalDistance, content) {
             stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: warmupDistance,
+            strokeType: SWIM_STROKE_TYPES.free,
             ...warmupPace
         });
 
@@ -186,6 +228,8 @@ export function generateSwimSteps(totalDistance, content) {
                     stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
                     endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
                     endConditionValue: drillPerRep,
+                    strokeType: SWIM_STROKE_TYPES.drill,
+                    drillType: SWIM_DRILL_TYPES.drill,
                     targetType: { workoutTargetTypeId: 1, workoutTargetTypeKey: 'no.target' }
                 },
                 {
@@ -203,6 +247,7 @@ export function generateSwimSteps(totalDistance, content) {
             stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: techniqueDistance,
+            strokeType: SWIM_STROKE_TYPES.free,
             ...getSwimPaceTarget('AEROBIC')
         });
 
@@ -211,6 +256,7 @@ export function generateSwimSteps(totalDistance, content) {
             stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: cooldownDistance,
+            strokeType: SWIM_STROKE_TYPES.free,
             ...recoveryPace
         });
 
@@ -220,6 +266,7 @@ export function generateSwimSteps(totalDistance, content) {
             stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: Math.round(totalDistance * 0.15),
+            strokeType: SWIM_STROKE_TYPES.free,
             ...recoveryPace
         });
         steps.push({
@@ -227,6 +274,7 @@ export function generateSwimSteps(totalDistance, content) {
             stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: Math.round(totalDistance * 0.7),
+            strokeType: SWIM_STROKE_TYPES.free,
             ...recoveryPace
         });
         steps.push({
@@ -234,6 +282,7 @@ export function generateSwimSteps(totalDistance, content) {
             stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: Math.round(totalDistance * 0.15),
+            strokeType: SWIM_STROKE_TYPES.free,
             ...recoveryPace
         });
 
@@ -247,6 +296,7 @@ export function generateSwimSteps(totalDistance, content) {
             stepType: { stepTypeId: 1, stepTypeKey: 'warmup' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: warmupDistance,
+            strokeType: SWIM_STROKE_TYPES.free,
             ...warmupPace
         });
         steps.push({
@@ -254,6 +304,7 @@ export function generateSwimSteps(totalDistance, content) {
             stepType: { stepTypeId: 3, stepTypeKey: 'interval' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: mainDistance,
+            strokeType: SWIM_STROKE_TYPES.free,
             ...getSwimPaceTarget('AEROBIC')
         });
         steps.push({
@@ -261,6 +312,7 @@ export function generateSwimSteps(totalDistance, content) {
             stepType: { stepTypeId: 2, stepTypeKey: 'cooldown' },
             endCondition: { conditionTypeId: 3, conditionTypeKey: 'distance' },
             endConditionValue: cooldownDistance,
+            strokeType: SWIM_STROKE_TYPES.free,
             ...recoveryPace
         });
     }
@@ -711,7 +763,7 @@ export function generateRunSteps(totalDistance, content) {
 export function convertToGarminWorkout(training, index, overrideDate = null) {
     const workouts = [];
     const sportTypes = {
-        swim: { sportTypeId: 5, sportTypeKey: 'pool_swimming' },
+        swim: { sportTypeId: 4, sportTypeKey: 'swimming' },
         bike: { sportTypeId: 2, sportTypeKey: 'cycling' },
         run: { sportTypeId: 1, sportTypeKey: 'running' }
     };

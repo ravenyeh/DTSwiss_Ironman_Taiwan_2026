@@ -338,9 +338,12 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
             })
         });
 
-        if (!response.ok) {
+        // Handle non-JSON responses (e.g., Vercel error pages)
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
             const text = await response.text();
-            updateGarminStatus(`伺服器錯誤 (${response.status})`, true);
+            console.error('Non-JSON response:', text.substring(0, 200));
+            updateGarminStatus(`伺服器錯誤 (${response.status})，請稍後再試或使用手動匯入`, true);
             return;
         }
 
@@ -436,6 +439,15 @@ export async function importWithCredentials(dayIndex, trainingData, convertToGar
                 workouts: workoutPayloads
             })
         });
+
+        // Handle non-JSON responses (e.g., Vercel error pages)
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Non-JSON response:', text.substring(0, 200));
+            updateGarminStatus(`伺服器錯誤 (${response.status})，請稍後再試或使用手動匯入`, true);
+            return;
+        }
 
         const data = await response.json();
 

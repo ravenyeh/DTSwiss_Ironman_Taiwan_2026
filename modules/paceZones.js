@@ -75,24 +75,26 @@ export function runPaceToSpeed(paceSecondsPerKm) {
 }
 
 // Get run pace target object for Garmin API
+// Uses pace.zone (workoutTargetTypeId: 6) to display as min/km instead of kph
 export function getRunPaceTarget(zone) {
     const multiplier = RUN_PACE_ZONES[zone] || RUN_PACE_ZONES.EASY;
     const paceSeconds = TRAINING_PARAMS.MARATHON_PACE_SEC * multiplier;
     const fastPace = paceSeconds * 0.95;
     const slowPace = paceSeconds * 1.05;
     return {
-        targetType: { workoutTargetTypeId: 5, workoutTargetTypeKey: 'speed.zone' },
+        targetType: { workoutTargetTypeId: 6, workoutTargetTypeKey: 'pace.zone' },
         targetValueOne: runPaceToSpeed(slowPace),
         targetValueTwo: runPaceToSpeed(fastPace)
     };
 }
 
 // Get run pace target from specific pace in seconds
+// Uses pace.zone (workoutTargetTypeId: 6) to display as min/km instead of kph
 export function getRunPaceFromSeconds(paceSeconds, variancePercent = 5) {
     const fastPace = paceSeconds * (1 - variancePercent / 100);
     const slowPace = paceSeconds * (1 + variancePercent / 100);
     return {
-        targetType: { workoutTargetTypeId: 5, workoutTargetTypeKey: 'speed.zone' },
+        targetType: { workoutTargetTypeId: 6, workoutTargetTypeKey: 'pace.zone' },
         targetValueOne: runPaceToSpeed(slowPace),
         targetValueTwo: runPaceToSpeed(fastPace)
     };

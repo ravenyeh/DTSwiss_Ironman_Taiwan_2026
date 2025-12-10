@@ -152,21 +152,32 @@ export function parseStructuredWorkout(content) {
     return null;
 }
 
-// Convert swim pace (seconds/100m) to speed (m/s)
+// Convert swim pace (seconds/100m) to speed (m/s) - kept for reference
 export function swimPaceToSpeed(paceSecondsPer100m) {
     return 100 / paceSecondsPer100m;
 }
 
-// Get swim pace target object for Garmin API
+// Get swim pace target object for Garmin API using CSS offset
+// Garmin swim.css.offset uses seconds relative to CSS:
+// - Positive values = slower than CSS
+// - Negative values = faster than CSS
 export function getSwimPaceTarget(zone) {
     const multiplier = SWIM_PACE_ZONES[zone] || SWIM_PACE_ZONES.CSS;
-    const paceSeconds = TRAINING_PARAMS.CSS_SEC * multiplier;
-    const fastPace = paceSeconds * 0.97;
-    const slowPace = paceSeconds * 1.03;
+    const cssSeconds = TRAINING_PARAMS.CSS_SEC;
+    const targetPaceSeconds = cssSeconds * multiplier;
+
+    // Calculate offset from CSS with ±3% variance
+    const slowPace = targetPaceSeconds * 1.03;
+    const fastPace = targetPaceSeconds * 0.97;
+
+    // Offset = target pace - CSS (positive = slower, negative = faster)
+    const slowPaceOffset = Math.round(slowPace - cssSeconds);
+    const fastPaceOffset = Math.round(fastPace - cssSeconds);
+
     return {
-        targetType: { workoutTargetTypeId: 5, workoutTargetTypeKey: 'speed.zone' },
-        targetValueOne: swimPaceToSpeed(slowPace),
-        targetValueTwo: swimPaceToSpeed(fastPace)
+        targetType: { workoutTargetTypeId: 17, workoutTargetTypeKey: 'swim.css.offset' },
+        targetValueOne: slowPaceOffset,  // Slower pace offset (typically positive)
+        targetValueTwo: fastPaceOffset   // Faster pace offset (can be negative)
     };
 }
 

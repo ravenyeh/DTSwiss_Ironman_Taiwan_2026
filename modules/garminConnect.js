@@ -358,11 +358,10 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
     }
 }
 
-// Import using stored token
-export async function importWithToken(dayIndex, trainingData, convertToGarminWorkout, clearTokenAndShowLogin) {
-    updateGarminStatus('驗證登入憑證...', false);
-    const user = await tryTokenLogin();
-    if (!user) {
+// Import using stored token (direct to /api/garmin/import)
+export async function importWithToken(dayIndex, trainingData, convertToGarminWorkout, clearTokenAndShowLogin, showWorkoutModal) {
+    const token = getGarminToken();
+    if (!token || isTokenExpired(token)) {
         updateGarminStatus('登入憑證已過期，請重新登入', true);
         clearTokenAndShowLogin();
         return;
@@ -388,8 +387,51 @@ export async function importWithToken(dayIndex, trainingData, convertToGarminWor
         return;
     }
 
+    const workoutPayloads = workouts.map(w => ({
+        workout: w.data,
+        scheduledDate: w.data.scheduledDate
+    }));
+
     updateGarminStatus(`匯入 ${workouts.length} 個訓練中...`, false);
-    await importAllToGarmin(dayIndex, trainingData, convertToGarminWorkout);
+
+    try {
+        const response = await fetch('/api/garmin/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                oauth2Token: token,
+                workouts: workoutPayloads
+            })
+        });
+
+        const data = await response.json();
+
+        // Update token if refreshed
+        if (data.oauth2Token) {
+            setGarminToken(data.oauth2Token);
+        }
+
+        // Handle token expiration
+        if (data.tokenExpired) {
+            updateGarminStatus('登入憑證已過期，請重新登入', true);
+            clearTokenAndShowLogin();
+            return;
+        }
+
+        if (data.success) {
+            updateGarminStatus('✅ ' + (data.message || '匯入成功！'), false);
+            setTimeout(() => {
+                const currentIndex = window.currentWorkoutDayIndex;
+                if (currentIndex !== undefined && showWorkoutModal) {
+                    showWorkoutModal(currentIndex, window.currentWorkoutOverrideDate);
+                }
+            }, 1500);
+        } else {
+            updateGarminStatus(`匯入失敗：${data.error}`, true);
+        }
+    } catch (error) {
+        updateGarminStatus(`連線錯誤：${error.message}`, true);
+    }
 }
 
 // Clear token and show login form

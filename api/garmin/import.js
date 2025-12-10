@@ -1,7 +1,6 @@
 const { GarminConnect } = require('@gooin/garmin-connect');
 
 // Combined login + import endpoint for Vercel serverless
-// Supports both email/password login and OAuth2 token reuse
 module.exports = async (req, res) => {
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,7 +16,14 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { email, password, oauth2Token, workouts } = req.body;
+        const { email, password, workouts } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                error: '請提供 Email 和密碼'
+            });
+        }
 
         if (!workouts || !Array.isArray(workouts) || workouts.length === 0) {
             return res.status(400).json({
@@ -26,62 +32,13 @@ module.exports = async (req, res) => {
             });
         }
 
-        let GC;
+        // Initialize and login
+        const GC = new GarminConnect({
+            username: email,
+            password: password
+        });
 
-        // Login method 1: Use stored OAuth2 token (token reuse)
-        if (oauth2Token && oauth2Token.access_token) {
-            // Check if token is expired
-            const now = Date.now();
-            if (oauth2Token.expires && oauth2Token.expires < now) {
-                return res.status(401).json({
-                    success: false,
-                    error: 'Token 已過期，請重新登入',
-                    tokenExpired: true
-                });
-            }
-
-            // Create GarminConnect and restore session with token
-            GC = new GarminConnect();
-
-            // Restore OAuth2 token - the library stores it internally
-            try {
-                await GC.restoreOrLogin(oauth2Token, async () => {
-                    throw new Error('Token invalid, login required');
-                });
-            } catch (restoreError) {
-                // Try alternative: set token directly and verify
-                try {
-                    if (GC.client) {
-                        GC.client.oauth2Token = oauth2Token;
-                    } else {
-                        // Initialize client manually if needed
-                        GC.oauth2Token = oauth2Token;
-                    }
-                    await GC.getUserProfile();
-                } catch (e) {
-                    return res.status(401).json({
-                        success: false,
-                        error: 'Token 無效，請重新登入',
-                        tokenExpired: true
-                    });
-                }
-            }
-        }
-        // Login method 2: Use email/password
-        else if (email && password) {
-            GC = new GarminConnect({
-                username: email,
-                password: password
-            });
-            await GC.login();
-        }
-        // No valid credentials provided
-        else {
-            return res.status(400).json({
-                success: false,
-                error: '請提供登入憑證（Token 或 Email/密碼）'
-            });
-        }
+        await GC.login();
 
         // Import each workout
         const results = [];

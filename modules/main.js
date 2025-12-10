@@ -6,11 +6,11 @@ import { TRAINING_PARAMS, POWER_ZONES, RUN_PACE_ZONES, SWIM_PACE_ZONES } from '.
 import { saveUserSettings, toggleSettingsPanel, updateSettingsDisplay } from './settings.js';
 import { formatDate, formatPace, toEnglishFilename, escapeXml } from './utils.js';
 import {
-    getGarminToken, isTokenExpired, getGarminUser,
+    hasValidLogin, getGarminUser,
     garminLogin, garminLogout,
     directImportToGarmin as _directImportToGarmin,
-    importWithToken as _importWithToken,
-    clearTokenAndShowLogin as _clearTokenAndShowLogin
+    importWithCredentials as _importWithCredentials,
+    clearLoginAndShowForm as _clearLoginAndShowForm
 } from './garminConnect.js';
 import { convertToGarminWorkout } from './workoutBuilder.js';
 import {
@@ -146,8 +146,7 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
         });
     }
 
-    const storedToken = getGarminToken();
-    const hasValidToken = storedToken && !isTokenExpired(storedToken);
+    const isLoggedIn = hasValidLogin();
     const storedUser = getGarminUser();
 
     html += `
@@ -155,14 +154,14 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
                 <h4>匯入 Garmin Connect</h4>
                 ${workouts.length > 0 ? `
                     <div id="garminLoginSection">
-                        ${hasValidToken ? `
+                        ${isLoggedIn ? `
                             <div class="garmin-token-status">
                                 <div class="garmin-user-info" id="garminUserInfo">
                                     ${storedUser?.profileImageUrl ? `<img src="${storedUser.profileImageUrl}" alt="Profile" class="garmin-user-avatar">` : '<div class="garmin-user-avatar-placeholder">👤</div>'}
-                                    <span class="garmin-user-name">${storedUser?.fullName || storedUser?.displayName || '已從瀏覽器取得登入憑證'}</span>
+                                    <span class="garmin-user-name">${storedUser?.fullName || storedUser?.displayName || '已登入'}</span>
                                 </div>
-                                <button class="btn-garmin-import" onclick="importWithToken(${dayIndex})">直接匯入訓練</button>
-                                <button class="btn-garmin-logout-small" onclick="clearTokenAndShowLogin()">登出</button>
+                                <button class="btn-garmin-import" onclick="importWithCredentials(${dayIndex})">直接匯入訓練</button>
+                                <button class="btn-garmin-logout-small" onclick="clearLoginAndShowForm()">登出</button>
                             </div>
                         ` : `
                             <div class="garmin-login-form" id="garminLoginForm">
@@ -515,8 +514,8 @@ window.directImportToGarmin = (dayIndex) => {
     return _directImportToGarmin(dayIndex, trainingData, convertToGarminWorkout, showWorkoutModal);
 };
 
-window.importWithToken = (dayIndex) => {
-    return _importWithToken(dayIndex, trainingData, convertToGarminWorkout, () => _clearTokenAndShowLogin(showWorkoutModal), showWorkoutModal);
+window.importWithCredentials = (dayIndex) => {
+    return _importWithCredentials(dayIndex, trainingData, convertToGarminWorkout, () => _clearLoginAndShowForm(showWorkoutModal), showWorkoutModal);
 };
 
-window.clearTokenAndShowLogin = () => _clearTokenAndShowLogin(showWorkoutModal);
+window.clearLoginAndShowForm = () => _clearLoginAndShowForm(showWorkoutModal);

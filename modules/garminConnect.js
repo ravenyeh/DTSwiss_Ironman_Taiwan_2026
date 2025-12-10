@@ -3,6 +3,7 @@
 const GARMIN_SESSION_KEY = 'garmin_session_id';
 const GARMIN_TOKEN_KEY = 'garmin_oauth2_token';
 const GARMIN_USER_KEY = 'garmin_user_info';
+const GARMIN_CREDS_KEY = 'garmin_credentials';  // For quick re-login
 
 // Get Garmin session from localStorage
 export function getGarminSession() {
@@ -61,6 +62,35 @@ export function setGarminUser(user) {
 // Clear Garmin user info
 export function clearGarminUser() {
     localStorage.removeItem(GARMIN_USER_KEY);
+}
+
+// Get stored credentials (for quick re-login)
+export function getGarminCredentials() {
+    try {
+        const creds = localStorage.getItem(GARMIN_CREDS_KEY);
+        return creds ? JSON.parse(creds) : null;
+    } catch {
+        return null;
+    }
+}
+
+// Set credentials to localStorage
+export function setGarminCredentials(email, password) {
+    if (email && password) {
+        localStorage.setItem(GARMIN_CREDS_KEY, JSON.stringify({ email, password }));
+    }
+}
+
+// Clear stored credentials
+export function clearGarminCredentials() {
+    localStorage.removeItem(GARMIN_CREDS_KEY);
+}
+
+// Check if we have valid login state (credentials + user info)
+export function hasValidLogin() {
+    const creds = getGarminCredentials();
+    const user = getGarminUser();
+    return !!(creds && creds.email && creds.password && user);
 }
 
 // Check if token is expired
@@ -308,15 +338,18 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
             })
         });
 
-        if (!response.ok) {
+        // Handle non-JSON responses (e.g., Vercel error pages)
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
             const text = await response.text();
-            updateGarminStatus(`伺服器錯誤 (${response.status})`, true);
+            console.error('Non-JSON response:', text.substring(0, 200));
+            updateGarminStatus(`伺服器錯誤 (${response.status})，請稍後再試或使用手動匯入`, true);
             return;
         }
 
         const data = await response.json();
 
-        // 無論成功失敗，都保存 token 和 user（如果有的話）
+        // 保存 token 和 user（如果有的話）
         if (data.oauth2Token) {
             setGarminToken(data.oauth2Token);
         }
@@ -325,6 +358,8 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
         }
 
         if (data.success) {
+            // Save credentials for quick re-login
+            setGarminCredentials(email, password);
             updateGarminStatus('✅ ' + (data.message || '匯入成功！'), false);
             setTimeout(() => {
                 const currentIndex = window.currentWorkoutDayIndex;
@@ -358,12 +393,12 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
     }
 }
 
-// Import using stored token (direct to /api/garmin/import)
-export async function importWithToken(dayIndex, trainingData, convertToGarminWorkout, clearTokenAndShowLogin, showWorkoutModal) {
-    const token = getGarminToken();
-    if (!token || isTokenExpired(token)) {
-        updateGarminStatus('登入憑證已過期，請重新登入', true);
-        clearTokenAndShowLogin();
+// Import using stored credentials (direct to /api/garmin/import)
+export async function importWithCredentials(dayIndex, trainingData, convertToGarminWorkout, clearLoginAndShowForm, showWorkoutModal) {
+    const creds = getGarminCredentials();
+    if (!creds || !creds.email || !creds.password) {
+        updateGarminStatus('登入憑證不存在，請重新登入', true);
+        clearLoginAndShowForm();
         return;
     }
 
@@ -399,23 +434,29 @@ export async function importWithToken(dayIndex, trainingData, convertToGarminWor
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                oauth2Token: token,
+                email: creds.email,
+                password: creds.password,
                 workouts: workoutPayloads
             })
         });
 
+        // Handle non-JSON responses (e.g., Vercel error pages)
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Non-JSON response:', text.substring(0, 200));
+            updateGarminStatus(`伺服器錯誤 (${response.status})，請稍後再試或使用手動匯入`, true);
+            return;
+        }
+
         const data = await response.json();
 
-        // Update token if refreshed
+        // Update token and user if returned
         if (data.oauth2Token) {
             setGarminToken(data.oauth2Token);
         }
-
-        // Handle token expiration
-        if (data.tokenExpired) {
-            updateGarminStatus('登入憑證已過期，請重新登入', true);
-            clearTokenAndShowLogin();
-            return;
+        if (data.user) {
+            setGarminUser(data.user);
         }
 
         if (data.success) {
@@ -427,6 +468,11 @@ export async function importWithToken(dayIndex, trainingData, convertToGarminWor
                 }
             }, 1500);
         } else {
+            // Check if credentials are invalid
+            if (data.error && (data.error.includes('密碼') || data.error.includes('Email'))) {
+                clearGarminCredentials();
+                clearGarminUser();
+            }
             updateGarminStatus(`匯入失敗：${data.error}`, true);
         }
     } catch (error) {
@@ -434,11 +480,12 @@ export async function importWithToken(dayIndex, trainingData, convertToGarminWor
     }
 }
 
-// Clear token and show login form
-export function clearTokenAndShowLogin(showWorkoutModal) {
+// Clear all login data and show login form
+export function clearLoginAndShowForm(showWorkoutModal) {
     clearGarminToken();
     clearGarminSession();
     clearGarminUser();
+    clearGarminCredentials();
 
     const currentIndex = window.currentWorkoutDayIndex;
     if (currentIndex !== undefined && showWorkoutModal) {

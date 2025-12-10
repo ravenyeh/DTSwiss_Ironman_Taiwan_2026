@@ -516,7 +516,7 @@ window.directImportToGarmin = (dayIndex) => {
 };
 
 window.importWithToken = (dayIndex) => {
-    return _importWithToken(dayIndex, trainingData, convertToGarminWorkout, () => _clearTokenAndShowLogin(showWorkoutModal));
+    return _importWithToken(dayIndex, trainingData, convertToGarminWorkout, () => _clearTokenAndShowLogin(showWorkoutModal), showWorkoutModal);
 };
 
 window.clearTokenAndShowLogin = () => _clearTokenAndShowLogin(showWorkoutModal);

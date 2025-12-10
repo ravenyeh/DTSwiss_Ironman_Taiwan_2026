@@ -26,8 +26,7 @@ module.exports = async (req, res) => {
             });
         }
 
-        // Initialize GarminConnect
-        const GC = new GarminConnect();
+        let GC;
 
         // Login method 1: Use stored OAuth2 token (token reuse)
         if (oauth2Token && oauth2Token.access_token) {
@@ -41,34 +40,40 @@ module.exports = async (req, res) => {
                 });
             }
 
-            // Set token directly on client
-            if (GC.client) {
-                GC.client.oauth2Token = oauth2Token;
-            }
+            // Create GarminConnect and restore session with token
+            GC = new GarminConnect();
 
-            // Verify token works
+            // Restore OAuth2 token - the library stores it internally
             try {
-                await GC.getUserProfile();
-            } catch (e) {
-                return res.status(401).json({
-                    success: false,
-                    error: 'Token 無效，請重新登入',
-                    tokenExpired: true
+                await GC.restoreOrLogin(oauth2Token, async () => {
+                    throw new Error('Token invalid, login required');
                 });
+            } catch (restoreError) {
+                // Try alternative: set token directly and verify
+                try {
+                    if (GC.client) {
+                        GC.client.oauth2Token = oauth2Token;
+                    } else {
+                        // Initialize client manually if needed
+                        GC.oauth2Token = oauth2Token;
+                    }
+                    await GC.getUserProfile();
+                } catch (e) {
+                    return res.status(401).json({
+                        success: false,
+                        error: 'Token 無效，請重新登入',
+                        tokenExpired: true
+                    });
+                }
             }
         }
         // Login method 2: Use email/password
         else if (email && password) {
-            const GCWithCreds = new GarminConnect({
+            GC = new GarminConnect({
                 username: email,
                 password: password
             });
-            await GCWithCreds.login();
-
-            // Copy the authenticated client
-            if (GCWithCreds.client) {
-                GC.client = GCWithCreds.client;
-            }
+            await GC.login();
         }
         // No valid credentials provided
         else {

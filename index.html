@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 IRONMAN 澎湖 90天訓練計劃 | DT Swiss</title>
+    <title>鐵人三項訓練計劃</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 48 48' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='24' cy='24' r='23' fill='%231a1a2e' stroke='%23e94560' stroke-width='2'/%3E%3Cpath d='M8 18 Q12 14, 16 18 T24 18 T32 18 T40 18' fill='none' stroke='%2300d4ff' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='17' cy='28' r='6' fill='none' stroke='%23ffd700' stroke-width='2'/%3E%3Ccircle cx='17' cy='28' r='2' fill='%23ffd700'/%3E%3Cpath d='M17 28 L22 24 L28 28 M22 24 L22 20 L25 20' fill='none' stroke='%23ffd700' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='35' cy='22' r='3' fill='%23e94560'/%3E%3Cpath d='M35 25 L35 32 M35 28 L31 31 M35 28 L39 31 M35 32 L32 38 M35 32 L38 38' stroke='%23e94560' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,7 @@
     <header class="header">
         <nav class="nav">
             <div class="nav-logos">
-                <img src="https://www.ironman.com/sites/default/files/styles/logo/public/2025-06/2026%20IM%20PENGHU%20%E5%86%A0%E5%90%8Dlogo_%E5%BD%A9%E8%89%B2.png.webp?itok=Ff3OKuDf" alt="IRONMAN Penghu 2026" class="nav-logo ironman-logo">
+                <span class="nav-race-name" id="navRaceName">鐵人三項訓練計劃</span>
                 <span class="nav-logo-separator">×</span>
                 <img src="images/garmin-logo-white.svg" alt="Garmin" class="nav-logo garmin-logo">
             </div>
@@ -66,13 +66,36 @@
                 </div>
             </div>
             <div class="hero-title-row">
-                <h1>2026 IRONMAN 澎湖</h1>
+                <h1 id="raceTitle">鐵人三項訓練</h1>
+                <button class="btn-race-settings" id="btnRaceSettings" title="設定比賽資訊">⚙️</button>
                 <div class="hero-date">
                     <span class="date-label">比賽日期</span>
-                    <span class="date-value">2026年4月12日</span>
+                    <span class="date-value" id="raceDateDisplay">請設定比賽日期</span>
                 </div>
             </div>
-            <h2>90天訓練計劃</h2>
+            <!-- Race Settings Modal -->
+            <div class="race-settings-modal" id="raceSettingsModal">
+                <div class="race-settings-content">
+                    <h3>選擇比賽</h3>
+                    <p class="settings-hint">選擇您的目標比賽，系統會自動設定倒數計時</p>
+                    <div class="race-settings-form">
+                        <div class="form-group">
+                            <label for="raceSelect">比賽</label>
+                            <select id="raceSelect">
+                                <option value="">-- 請選擇比賽 --</option>
+                                <option value="puyuma">2026 普悠瑪鐵人三項 (3/28)</option>
+                                <option value="ironman">2026 IRONMAN 澎湖 (4/12)</option>
+                                <option value="challenge">2026 Challenge Taiwan (4/25)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="race-settings-actions">
+                        <button class="btn-save-race" id="btnSaveRace">確定</button>
+                        <button class="btn-cancel-race" id="btnCancelRace">取消</button>
+                    </div>
+                </div>
+            </div>
+            <h2>20週訓練計劃</h2>
             <div class="hero-stats">
                 <div class="stat">
                     <img src="./images/swim.png" alt="游泳" class="stat-icon-img">
@@ -457,173 +480,19 @@
         </div>
     </section>
 
-    <!-- Why I Can Succeed Section -->
-    <section class="section success-section">
-        <div class="container">
-            <h2 class="section-title">為什麼我能成功？</h2>
-
-            <div class="success-grid">
-                <div class="success-card">
-                    <div class="success-number">1</div>
-                    <h3>扎實的經驗基礎</h3>
-                    <ul>
-                        <li>2025年Challenge Taiwan完賽，累積完整226km經驗</li>
-                        <li>了解自己的體能極限和配速策略</li>
-                        <li>驗證過補給方案和裝備選擇</li>
-                    </ul>
-                </div>
-                <div class="success-card">
-                    <div class="success-number">2</div>
-                    <h3>科學化訓練方法</h3>
-                    <ul>
-                        <li>週期化訓練：建構→強化→巔峰→減量</li>
-                        <li>訓練專項性：針對三項弱點精準改善</li>
-                        <li>負荷管理：使用TSS監控，避免過度訓練</li>
-                        <li>充分恢復：每週1-2天完全休息</li>
-                    </ul>
-                </div>
-                <div class="success-card">
-                    <div class="success-number">3</div>
-                    <h3>明確的進步空間</h3>
-                    <ul>
-                        <li>游泳技術修正可提升11%效率</li>
-                        <li>澎湖賽道較平坦，適合我的騎乘風格</li>
-                        <li>磚式訓練強化騎後跑步經濟性</li>
-                    </ul>
-                </div>
-                <div class="success-card">
-                    <div class="success-number">4</div>
-                    <h3>全面的支持系統</h3>
-                    <ul>
-                        <li>訓練夥伴每週末團練</li>
-                        <li>家人理解並支持訓練計劃</li>
-                        <li>裝備已完成優化和磨合</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="motivation-box">
-                <h3>我為什麼要挑戰12小時？</h3>
-                <div class="motivation-reasons">
-                    <div class="reason">
-                        <span class="reason-icon">🚀</span>
-                        <div>
-                            <strong>突破自我</strong>
-                            <p>證明自己可以在1年內進步超過1小時</p>
-                        </div>
-                    </div>
-                    <div class="reason">
-                        <span class="reason-icon">🏝️</span>
-                        <div>
-                            <strong>澎湖情懷</strong>
-                            <p>在美麗的澎湖完成人生重要里程碑</p>
-                        </div>
-                    </div>
-                    <div class="reason">
-                        <span class="reason-icon">🤝</span>
-                        <div>
-                            <strong>回饋支持</strong>
-                            <p>DT Swiss提供機會，我要用表現證明價值</p>
-                        </div>
-                    </div>
-                    <div class="reason">
-                        <span class="reason-icon">🏆</span>
-                        <div>
-                            <strong>生涯目標</strong>
-                            <p>進入12小時俱樂部，達成業餘鐵人重要門檻</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Commitment Section -->
-    <section class="section commitment-section">
-        <div class="container">
-            <h2 class="section-title">我的承諾</h2>
-            <div class="commitments">
-                <div class="commitment-item">
-                    <span class="check">✓</span>
-                    <span>90天內完成計劃中95%以上的訓練</span>
-                </div>
-                <div class="commitment-item">
-                    <span class="check">✓</span>
-                    <span>每週在 <a href="https://www.instagram.com/yehraven/" target="_blank" class="instagram-link">Instagram @yehraven</a> 記錄訓練日誌和心得</span>
-                </div>
-                <div class="commitment-item">
-                    <span class="check">✓</span>
-                    <span>分享訓練過程和賽事準備</span>
-                </div>
-                <div class="commitment-item">
-                    <span class="check">✓</span>
-                    <span>無論結果如何，享受過程，全力以赴</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Closing Section -->
-    <section class="section closing-section">
-        <div class="container">
-            <h2>這是一場與自己的約定</h2>
-            <p class="closing-text">
-                從13小時到12小時，差距不只是60分鐘，而是：
-            </p>
-            <div class="closing-points">
-                <div class="point">無數個清晨5:30的游泳池</div>
-                <div class="point">數千公里的自行車訓練里程</div>
-                <div class="point">一次次咬牙完成的磚式訓練</div>
-                <div class="point">對補給、配速、裝備的細節琢磨</div>
-            </div>
-            <div class="ready-statement">
-                <strong>但我準備好了。</strong>
-            </div>
-            <div class="proving-points">
-                <p>這90天，我將證明：</p>
-                <ul>
-                    <li>科學化訓練可以帶來顯著進步</li>
-                    <li>全職工作者也能完成高質量訓練</li>
-                    <li>堅持和紀律能突破個人極限</li>
-                    <li>夢想不只是想想，而是一天天練出來的</li>
-                </ul>
-            </div>
-            <div class="final-statement">
-                <p class="date">2026年4月12日，澎湖</p>
-                <p class="action">我會站在起跑線上。</p>
-                <p class="description">
-                    當我游過3.8km的碧藍海域，騎過180km的澎湖公路，跑過最後42km的市區街道，衝過終點線的那一刻——
-                </p>
-                <div class="target-time">
-                    <span class="clock">⏱️</span>
-                    <span class="time">11:4X:XX</span>
-                </div>
-                <p class="promise">我會完成這場與自己的約定</p>
-                <div class="ironman-badge">
-                    <span>YOU ARE AN IRONMAN!</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-logos">
-                    <img src="https://www.ironman.com/sites/default/files/styles/logo/public/2025-06/2026%20IM%20PENGHU%20%E5%86%A0%E5%90%8Dlogo_%E5%BD%A9%E8%89%B2.png.webp?itok=Ff3OKuDf" alt="IRONMAN Penghu 2026" class="footer-logo-img ironman-footer">
-                    <span class="footer-logo-separator">×</span>
                     <img src="images/garmin-logo-white.svg" alt="Garmin" class="footer-logo-img garmin-footer">
                 </div>
                 <div class="footer-tags">
-                    <span class="tag">#IRONMAN澎湖</span>
-                    <span class="tag">#DTSwiss</span>
+                    <span class="tag">#鐵人三項</span>
                     <span class="tag">#Garmin</span>
-                    <span class="tag">#90天訓練計劃</span>
-                    <span class="tag">#突破12小時</span>
-                    <span class="tag">#與自己的約定</span>
+                    <span class="tag">#訓練計劃</span>
                 </div>
-                <p class="footer-copyright">© 2026 IRONMAN 澎湖訓練計劃</p>
+                <p class="footer-copyright" id="footerCopyright">© 鐵人三項訓練計劃</p>
             </div>
         </div>
     </footer>

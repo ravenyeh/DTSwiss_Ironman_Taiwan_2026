@@ -336,22 +336,40 @@ function formatStepTarget(step, sportType) {
 // Race Settings
 // ============================================
 
-const DEFAULT_RACE_NAME = '鐵人三項訓練';
-const DEFAULT_RACE_DATE = 'April 12, 2026';
+const RACES = {
+    puyuma: { name: '2026 普悠瑪鐵人三項', date: 'March 28, 2026' },
+    ironman: { name: '2026 IRONMAN 澎湖', date: 'April 12, 2026' },
+    challenge: { name: '2026 Challenge Taiwan', date: 'April 25, 2026' }
+};
+
+const DEFAULT_RACE_KEY = 'ironman';
 
 function getRaceSettings() {
     const saved = localStorage.getItem('raceSettings');
     if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed.raceKey && RACES[parsed.raceKey]) {
+            return {
+                raceKey: parsed.raceKey,
+                name: RACES[parsed.raceKey].name,
+                date: RACES[parsed.raceKey].date
+            };
+        }
     }
     return {
-        name: DEFAULT_RACE_NAME,
-        date: DEFAULT_RACE_DATE
+        raceKey: DEFAULT_RACE_KEY,
+        name: RACES[DEFAULT_RACE_KEY].name,
+        date: RACES[DEFAULT_RACE_KEY].date
     };
 }
 
-function saveRaceSettings(name, date) {
-    const settings = { name, date };
+function saveRaceSettings(raceKey) {
+    if (!RACES[raceKey]) return;
+    const settings = {
+        raceKey,
+        name: RACES[raceKey].name,
+        date: RACES[raceKey].date
+    };
     localStorage.setItem('raceSettings', JSON.stringify(settings));
     updateRaceDisplay();
     updateCountdown();
@@ -395,42 +413,28 @@ function initRaceSettingsModal() {
     const btnOpen = document.getElementById('btnRaceSettings');
     const btnSave = document.getElementById('btnSaveRace');
     const btnCancel = document.getElementById('btnCancelRace');
-    const nameInput = document.getElementById('raceNameInput');
-    const dateInput = document.getElementById('raceDateInput');
+    const raceSelect = document.getElementById('raceSelect');
 
     if (!modal || !btnOpen) return;
 
-    // Load current settings into inputs
+    // Load current settings into select
     const settings = getRaceSettings();
-    if (nameInput) nameInput.value = settings.name;
-    if (dateInput) {
-        const date = new Date(settings.date);
-        if (!isNaN(date.getTime())) {
-            dateInput.value = date.toISOString().split('T')[0];
-        }
-    }
+    if (raceSelect) raceSelect.value = settings.raceKey || '';
 
     // Open modal
     btnOpen.addEventListener('click', () => {
         modal.classList.add('show');
-        // Refresh inputs with current settings
         const currentSettings = getRaceSettings();
-        if (nameInput) nameInput.value = currentSettings.name;
-        if (dateInput) {
-            const date = new Date(currentSettings.date);
-            if (!isNaN(date.getTime())) {
-                dateInput.value = date.toISOString().split('T')[0];
-            }
-        }
+        if (raceSelect) raceSelect.value = currentSettings.raceKey || '';
     });
 
     // Save settings
     if (btnSave) {
         btnSave.addEventListener('click', () => {
-            const name = nameInput?.value.trim() || DEFAULT_RACE_NAME;
-            const dateValue = dateInput?.value;
-            const date = dateValue ? new Date(dateValue).toDateString() : DEFAULT_RACE_DATE;
-            saveRaceSettings(name, date);
+            const selectedRace = raceSelect?.value;
+            if (selectedRace && RACES[selectedRace]) {
+                saveRaceSettings(selectedRace);
+            }
             modal.classList.remove('show');
         });
     }

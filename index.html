@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 IRONMAN 澎湖 90天訓練計劃 | DT Swiss</title>
+    <title>鐵人三項訓練計劃</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 48 48' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='24' cy='24' r='23' fill='%231a1a2e' stroke='%23e94560' stroke-width='2'/%3E%3Cpath d='M8 18 Q12 14, 16 18 T24 18 T32 18 T40 18' fill='none' stroke='%2300d4ff' stroke-width='2.5' stroke-linecap='round'/%3E%3Ccircle cx='17' cy='28' r='6' fill='none' stroke='%23ffd700' stroke-width='2'/%3E%3Ccircle cx='17' cy='28' r='2' fill='%23ffd700'/%3E%3Cpath d='M17 28 L22 24 L28 28 M22 24 L22 20 L25 20' fill='none' stroke='%23ffd700' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='35' cy='22' r='3' fill='%23e94560'/%3E%3Cpath d='M35 25 L35 32 M35 28 L31 31 M35 28 L39 31 M35 32 L32 38 M35 32 L38 38' stroke='%23e94560' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,7 @@
     <header class="header">
         <nav class="nav">
             <div class="nav-logos">
-                <img src="https://www.ironman.com/sites/default/files/styles/logo/public/2025-06/2026%20IM%20PENGHU%20%E5%86%A0%E5%90%8Dlogo_%E5%BD%A9%E8%89%B2.png.webp?itok=Ff3OKuDf" alt="IRONMAN Penghu 2026" class="nav-logo ironman-logo">
+                <span class="nav-race-name" id="navRaceName">鐵人三項訓練計劃</span>
                 <span class="nav-logo-separator">×</span>
                 <img src="images/garmin-logo-white.svg" alt="Garmin" class="nav-logo garmin-logo">
             </div>
@@ -66,10 +66,32 @@
                 </div>
             </div>
             <div class="hero-title-row">
-                <h1>2026 IRONMAN 澎湖</h1>
+                <h1 id="raceTitle">鐵人三項訓練</h1>
+                <button class="btn-race-settings" id="btnRaceSettings" title="設定比賽資訊">⚙️</button>
                 <div class="hero-date">
                     <span class="date-label">比賽日期</span>
-                    <span class="date-value">2026年4月12日</span>
+                    <span class="date-value" id="raceDateDisplay">請設定比賽日期</span>
+                </div>
+            </div>
+            <!-- Race Settings Modal -->
+            <div class="race-settings-modal" id="raceSettingsModal">
+                <div class="race-settings-content">
+                    <h3>比賽設定</h3>
+                    <p class="settings-hint">設定您的目標比賽，系統會自動調整倒數計時</p>
+                    <div class="race-settings-form">
+                        <div class="form-group">
+                            <label for="raceNameInput">比賽名稱</label>
+                            <input type="text" id="raceNameInput" placeholder="例如：2026 IRONMAN 澎湖">
+                        </div>
+                        <div class="form-group">
+                            <label for="raceDateInput">比賽日期</label>
+                            <input type="date" id="raceDateInput">
+                        </div>
+                    </div>
+                    <div class="race-settings-actions">
+                        <button class="btn-save-race" id="btnSaveRace">儲存設定</button>
+                        <button class="btn-cancel-race" id="btnCancelRace">取消</button>
+                    </div>
                 </div>
             </div>
             <h2>90天訓練計劃</h2>
@@ -462,19 +484,14 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-logos">
-                    <img src="https://www.ironman.com/sites/default/files/styles/logo/public/2025-06/2026%20IM%20PENGHU%20%E5%86%A0%E5%90%8Dlogo_%E5%BD%A9%E8%89%B2.png.webp?itok=Ff3OKuDf" alt="IRONMAN Penghu 2026" class="footer-logo-img ironman-footer">
-                    <span class="footer-logo-separator">×</span>
                     <img src="images/garmin-logo-white.svg" alt="Garmin" class="footer-logo-img garmin-footer">
                 </div>
                 <div class="footer-tags">
-                    <span class="tag">#IRONMAN澎湖</span>
-                    <span class="tag">#DTSwiss</span>
+                    <span class="tag">#鐵人三項</span>
                     <span class="tag">#Garmin</span>
-                    <span class="tag">#90天訓練計劃</span>
-                    <span class="tag">#突破12小時</span>
-                    <span class="tag">#與自己的約定</span>
+                    <span class="tag">#訓練計劃</span>
                 </div>
-                <p class="footer-copyright">© 2026 IRONMAN 澎湖訓練計劃</p>
+                <p class="footer-copyright" id="footerCopyright">© 鐵人三項訓練計劃</p>
             </div>
         </div>
     </footer>

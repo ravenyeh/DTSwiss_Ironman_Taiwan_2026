@@ -333,11 +333,130 @@ function formatStepTarget(step, sportType) {
 }
 
 // ============================================
+// Race Settings
+// ============================================
+
+const DEFAULT_RACE_NAME = '鐵人三項訓練';
+const DEFAULT_RACE_DATE = 'April 12, 2026';
+
+function getRaceSettings() {
+    const saved = localStorage.getItem('raceSettings');
+    if (saved) {
+        return JSON.parse(saved);
+    }
+    return {
+        name: DEFAULT_RACE_NAME,
+        date: DEFAULT_RACE_DATE
+    };
+}
+
+function saveRaceSettings(name, date) {
+    const settings = { name, date };
+    localStorage.setItem('raceSettings', JSON.stringify(settings));
+    updateRaceDisplay();
+    updateCountdown();
+}
+
+function updateRaceDisplay() {
+    const settings = getRaceSettings();
+
+    // Update title
+    const titleEl = document.getElementById('raceTitle');
+    if (titleEl) titleEl.textContent = settings.name;
+
+    // Update nav race name
+    const navRaceNameEl = document.getElementById('navRaceName');
+    if (navRaceNameEl) navRaceNameEl.textContent = settings.name;
+
+    // Update date display
+    const dateDisplayEl = document.getElementById('raceDateDisplay');
+    if (dateDisplayEl) {
+        const raceDate = new Date(settings.date);
+        if (!isNaN(raceDate.getTime())) {
+            const year = raceDate.getFullYear();
+            const month = raceDate.getMonth() + 1;
+            const day = raceDate.getDate();
+            dateDisplayEl.textContent = `${year}年${month}月${day}日`;
+        } else {
+            dateDisplayEl.textContent = '請設定比賽日期';
+        }
+    }
+
+    // Update page title
+    document.title = settings.name + ' - 訓練計劃';
+
+    // Update footer copyright
+    const footerEl = document.getElementById('footerCopyright');
+    if (footerEl) footerEl.textContent = `© ${settings.name}`;
+}
+
+function initRaceSettingsModal() {
+    const modal = document.getElementById('raceSettingsModal');
+    const btnOpen = document.getElementById('btnRaceSettings');
+    const btnSave = document.getElementById('btnSaveRace');
+    const btnCancel = document.getElementById('btnCancelRace');
+    const nameInput = document.getElementById('raceNameInput');
+    const dateInput = document.getElementById('raceDateInput');
+
+    if (!modal || !btnOpen) return;
+
+    // Load current settings into inputs
+    const settings = getRaceSettings();
+    if (nameInput) nameInput.value = settings.name;
+    if (dateInput) {
+        const date = new Date(settings.date);
+        if (!isNaN(date.getTime())) {
+            dateInput.value = date.toISOString().split('T')[0];
+        }
+    }
+
+    // Open modal
+    btnOpen.addEventListener('click', () => {
+        modal.classList.add('show');
+        // Refresh inputs with current settings
+        const currentSettings = getRaceSettings();
+        if (nameInput) nameInput.value = currentSettings.name;
+        if (dateInput) {
+            const date = new Date(currentSettings.date);
+            if (!isNaN(date.getTime())) {
+                dateInput.value = date.toISOString().split('T')[0];
+            }
+        }
+    });
+
+    // Save settings
+    if (btnSave) {
+        btnSave.addEventListener('click', () => {
+            const name = nameInput?.value.trim() || DEFAULT_RACE_NAME;
+            const dateValue = dateInput?.value;
+            const date = dateValue ? new Date(dateValue).toDateString() : DEFAULT_RACE_DATE;
+            saveRaceSettings(name, date);
+            modal.classList.remove('show');
+        });
+    }
+
+    // Cancel
+    if (btnCancel) {
+        btnCancel.addEventListener('click', () => {
+            modal.classList.remove('show');
+        });
+    }
+
+    // Close on backdrop click
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('show');
+        }
+    });
+}
+
+// ============================================
 // Countdown & Today's Training
 // ============================================
 
 function updateCountdown() {
-    const raceDate = new Date('April 12, 2026');
+    const settings = getRaceSettings();
+    const raceDate = new Date(settings.date);
     const today = new Date();
     const diff = raceDate - today;
 
@@ -351,10 +470,17 @@ function updateCountdown() {
     const minsEl = document.getElementById('countdown-minutes');
     const secsEl = document.getElementById('countdown-seconds');
 
-    if (daysEl) daysEl.textContent = days;
-    if (hoursEl) hoursEl.textContent = hours.toString().padStart(2, '0');
-    if (minsEl) minsEl.textContent = mins.toString().padStart(2, '0');
-    if (secsEl) secsEl.textContent = secs.toString().padStart(2, '0');
+    if (diff > 0) {
+        if (daysEl) daysEl.textContent = days;
+        if (hoursEl) hoursEl.textContent = hours.toString().padStart(2, '0');
+        if (minsEl) minsEl.textContent = mins.toString().padStart(2, '0');
+        if (secsEl) secsEl.textContent = secs.toString().padStart(2, '0');
+    } else {
+        if (daysEl) daysEl.textContent = '0';
+        if (hoursEl) hoursEl.textContent = '00';
+        if (minsEl) minsEl.textContent = '00';
+        if (secsEl) secsEl.textContent = '00';
+    }
 }
 
 function displayTodayTraining() {
@@ -477,6 +603,10 @@ function initWeeklyMileageChart() {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize race settings first
+    updateRaceDisplay();
+    initRaceSettingsModal();
+
     populateSchedule();
     updateSettingsDisplay();
     updateCountdown();
@@ -501,7 +631,12 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeWorkoutModal();
+    if (e.key === 'Escape') {
+        closeWorkoutModal();
+        // Also close race settings modal
+        const raceModal = document.getElementById('raceSettingsModal');
+        if (raceModal) raceModal.classList.remove('show');
+    }
 });
 
 // ============================================

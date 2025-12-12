@@ -21,9 +21,7 @@
                 <img src="images/garmin-logo-white.svg" alt="Garmin" class="nav-logo garmin-logo">
             </div>
             <ul class="nav-links">
-                <li><a href="#goals">目標</a></li>
                 <li><a href="#schedule">訓練計劃</a></li>
-                <li><a href="#strategy">策略</a></li>
                 <li><a href="#race-day">比賽日</a></li>
             </ul>
             <a href="https://www.instagram.com/yehraven/" target="_blank" class="nav-profile">
@@ -143,75 +141,6 @@
         </div>
     </section>
 
-    <!-- Goals Section -->
-    <section id="goals" class="section goals-section">
-        <div class="container">
-            <h2 class="section-title">挑戰目標</h2>
-            <div class="goal-highlight">
-                <div class="goal-main">
-                    <span class="goal-text">突破</span>
-                    <span class="goal-number">12</span>
-                    <span class="goal-text">小時大關</span>
-                </div>
-                <p class="goal-description">
-                    2025年Challenge Taiwan賽後，我深知自己在各項目仍有很大進步空間。這次 IRONMAN 澎湖，我要將完賽時間從 <strong>13:00:38</strong> 壓縮到 <strong>12 小時以內</strong>，實現質的飛躍！
-                </p>
-            </div>
-
-            <div class="comparison-table">
-                <div class="table-header">
-                    <div class="col">項目</div>
-                    <div class="col">2026目標</div>
-                    <div class="col">目標配速</div>
-                    <div class="col">2025成績</div>
-                    <div class="col">需進步</div>
-                </div>
-                <div class="table-row swim">
-                    <div class="col"><img src="images/swim.png" class="icon-img" alt="游泳"> 游泳 3.8km</div>
-                    <div class="col highlight">1:35:00</div>
-                    <div class="col">2:30/100m</div>
-                    <div class="col">1:46:46</div>
-                    <div class="col improve">-11:46 (11%)</div>
-                </div>
-                <div class="table-row bike">
-                    <div class="col"><img src="images/cycling.png" class="icon-img" alt="自行車"> 自行車 180km</div>
-                    <div class="col highlight">6:00:00</div>
-                    <div class="col">30.0 km/h</div>
-                    <div class="col">6:41:11</div>
-                    <div class="col improve">-41:11 (10%)</div>
-                </div>
-                <div class="table-row run">
-                    <div class="col"><img src="images/run.png" class="icon-img" alt="跑步"> 跑步 42km</div>
-                    <div class="col highlight">4:05:00</div>
-                    <div class="col">5:49/km</div>
-                    <div class="col">4:19:38</div>
-                    <div class="col improve">-14:38 (6%)</div>
-                </div>
-                <div class="table-row transition">
-                    <div class="col"><span class="icon">🔄</span> T1 轉換</div>
-                    <div class="col highlight">5:00</div>
-                    <div class="col">-</div>
-                    <div class="col">7:46</div>
-                    <div class="col improve">-2:46 (36%)</div>
-                </div>
-                <div class="table-row transition">
-                    <div class="col"><span class="icon">🔄</span> T2 轉換</div>
-                    <div class="col highlight">3:00</div>
-                    <div class="col">-</div>
-                    <div class="col">4:11</div>
-                    <div class="col improve">-1:11 (28%)</div>
-                </div>
-                <div class="table-row total">
-                    <div class="col"><strong>總計</strong></div>
-                    <div class="col highlight"><strong>11:48:00</strong></div>
-                    <div class="col">-</div>
-                    <div class="col"><strong>13:00:38</strong></div>
-                    <div class="col improve"><strong>-1:12:38</strong></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <!-- Training Schedule Section -->
     <section id="schedule" class="section schedule-section">
         <div class="container">
@@ -278,12 +207,28 @@
             <!-- Weekly Summary with Integrated Phases -->
             <div class="weekly-summary">
                 <div class="summary-cards">
+                    <div class="summary-card" data-phase="base">
+                        <div class="card-phase-header">
+                            <span class="phase-icon">🌱</span>
+                            <div class="phase-info">
+                                <h4>基礎期</h4>
+                                <span class="phase-weeks">Week 1-7</span>
+                            </div>
+                        </div>
+                        <p class="phase-description">建立有氧基礎，循序漸進</p>
+                        <div class="card-content">
+                            <div class="card-stat"><span class="label">游泳</span><span class="value">6-8km</span></div>
+                            <div class="card-stat"><span class="label">自行車</span><span class="value">180-250km</span></div>
+                            <div class="card-stat"><span class="label">跑步</span><span class="value">30-45km</span></div>
+                            <div class="card-stat total"><span class="label">總時數</span><span class="value">14-18h</span></div>
+                        </div>
+                    </div>
                     <div class="summary-card" data-phase="build">
                         <div class="card-phase-header">
                             <span class="phase-icon">🏗️</span>
                             <div class="phase-info">
                                 <h4>建構期</h4>
-                                <span class="phase-weeks">Week 1-4</span>
+                                <span class="phase-weeks">Week 8-11</span>
                             </div>
                         </div>
                         <p class="phase-description">重建訓練量，打好有氧基礎</p>
@@ -299,7 +244,7 @@
                             <span class="phase-icon">💪</span>
                             <div class="phase-info">
                                 <h4>強化期</h4>
-                                <span class="phase-weeks">Week 5-9</span>
+                                <span class="phase-weeks">Week 12-16</span>
                             </div>
                         </div>
                         <p class="phase-description">最大訓練量，專項能力突破</p>
@@ -315,7 +260,7 @@
                             <span class="phase-icon">🔥</span>
                             <div class="phase-info">
                                 <h4>巔峰期</h4>
-                                <span class="phase-weeks">Week 10-11</span>
+                                <span class="phase-weeks">Week 17-18</span>
                             </div>
                         </div>
                         <p class="phase-description">半程模擬賽，驗證策略</p>
@@ -331,7 +276,7 @@
                             <span class="phase-icon">🎯</span>
                             <div class="phase-info">
                                 <h4>減量期</h4>
-                                <span class="phase-weeks">Week 12-13</span>
+                                <span class="phase-weeks">Week 19-20</span>
                             </div>
                         </div>
                         <p class="phase-description">恢復能量，迎接比賽</p>
@@ -346,7 +291,7 @@
                 <div class="total-training">
                     <div class="total-item">
                         <span class="total-label">總訓練天數</span>
-                        <span class="total-value">90天</span>
+                        <span class="total-value">140天</span>
                     </div>
                     <div class="total-item">
                         <span class="total-label">總游泳量</span>
@@ -408,75 +353,6 @@
                     </table>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <!-- Strategy Section -->
-    <section id="strategy" class="section strategy-section">
-        <div class="container">
-            <h2 class="section-title">訓練策略</h2>
-
-            <div class="strategies">
-                <!-- Swim Strategy -->
-                <div class="strategy-card swim-card">
-                    <div class="strategy-header">
-                        <img src="images/swim.png" class="strategy-icon-img" alt="游泳">
-                        <h3>游泳策略：技術突破</h3>
-                    </div>
-                    <div class="strategy-target">
-                        <span class="from">2:49/100m</span>
-                        <span class="arrow">→</span>
-                        <span class="to">2:30/100m</span>
-                        <span class="save">節省11分鐘</span>
-                    </div>
-                    <ul class="strategy-methods">
-                        <li>每週2次技術課，提升劃頻至70-75 SPM</li>
-                        <li>配速間歇訓練：6 x 400m @ 2:32/100m</li>
-                        <li>每2週1次開放水域，適應澎湖海況</li>
-                    </ul>
-                </div>
-
-                <!-- Bike Strategy -->
-                <div class="strategy-card bike-card">
-                    <div class="strategy-header">
-                        <img src="images/cycling.png" class="strategy-icon-img" alt="自行車">
-                        <h3>自行車策略：功率提升</h3>
-                    </div>
-                    <div class="strategy-target">
-                        <span class="from">26.9 km/h</span>
-                        <span class="arrow">→</span>
-                        <span class="to">30.0 km/h</span>
-                        <span class="save">節省41分鐘</span>
-                    </div>
-                    <ul class="strategy-methods">
-                        <li>每週2次 Sweet Spot 訓練，提升FTP 10-15W</li>
-                        <li>每週1次長距離160-180km，練習補給</li>
-                        <li>側風訓練，適應澎湖賽道特性</li>
-                        <li>磚式訓練強化騎轉跑能力</li>
-                    </ul>
-                </div>
-
-                <!-- Run Strategy -->
-                <div class="strategy-card run-card">
-                    <div class="strategy-header">
-                        <img src="images/run.png" class="strategy-icon-img" alt="跑步">
-                        <h3>跑步策略：配速穩定</h3>
-                    </div>
-                    <div class="strategy-target">
-                        <span class="from">6:09/km</span>
-                        <span class="arrow">→</span>
-                        <span class="to">5:49/km</span>
-                        <span class="save">節省15分鐘</span>
-                    </div>
-                    <ul class="strategy-methods">
-                        <li>配速分層：輕鬆跑60% + 馬拉松配速25% + 節奏跑15%</li>
-                        <li>每週1次長跑25-28km，建立耐力</li>
-                        <li>磚式訓練適應騎後跑步</li>
-                        <li>中午時段訓練，適應澎湖高溫</li>
-                    </ul>
-                </div>
-            </div>
-
         </div>
     </section>
 

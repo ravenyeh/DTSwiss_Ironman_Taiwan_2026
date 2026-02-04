@@ -5,6 +5,11 @@ const GARMIN_TOKEN_KEY = 'garmin_oauth2_token';
 const GARMIN_USER_KEY = 'garmin_user_info';
 const GARMIN_CREDS_KEY = 'garmin_credentials';  // For quick re-login
 
+// MFA state - in-memory only, never stored in localStorage
+let pendingMfaSession = null;
+let pendingWorkouts = null;
+let pendingDayIndex = null;
+
 // Get Garmin session from localStorage
 export function getGarminSession() {
     return localStorage.getItem(GARMIN_SESSION_KEY);
@@ -93,6 +98,18 @@ export function hasValidLogin() {
     return !!(creds && creds.email && creds.password && user);
 }
 
+// Check if MFA is pending
+export function hasPendingMfa() {
+    return !!pendingMfaSession;
+}
+
+// Clear MFA state
+export function clearMfaState() {
+    pendingMfaSession = null;
+    pendingWorkouts = null;
+    pendingDayIndex = null;
+}
+
 // Check if token is expired
 export function isTokenExpired(token) {
     if (!token) return true;
@@ -144,6 +161,31 @@ export function updateGarminStatus(message, isError = false) {
     }
 }
 
+// Show OTP input UI
+function showMfaInput() {
+    const loginForm = document.getElementById('garminLoginForm');
+    const mfaForm = document.getElementById('garminMfaForm');
+
+    if (loginForm) loginForm.style.display = 'none';
+    if (mfaForm) mfaForm.style.display = 'block';
+
+    // Focus OTP input
+    const otpInput = document.getElementById('garminMfaCode');
+    if (otpInput) {
+        otpInput.value = '';
+        otpInput.focus();
+    }
+}
+
+// Hide OTP input UI and show login form
+function hideMfaInput() {
+    const loginForm = document.getElementById('garminLoginForm');
+    const mfaForm = document.getElementById('garminMfaForm');
+
+    if (loginForm) loginForm.style.display = 'block';
+    if (mfaForm) mfaForm.style.display = 'none';
+}
+
 // Login to Garmin Connect
 export async function garminLogin(showWorkoutModal) {
     const email = document.getElementById('garminEmail')?.value;
@@ -164,6 +206,14 @@ export async function garminLogin(showWorkoutModal) {
         });
 
         const data = await response.json();
+
+        // MFA required
+        if (data.needsMfa) {
+            pendingMfaSession = data.mfaSession;
+            updateGarminStatus('📱 請輸入 Garmin 傳送的驗證碼', false);
+            showMfaInput();
+            return;
+        }
 
         if (data.success) {
             setGarminSession(data.sessionId);
@@ -206,6 +256,7 @@ export async function garminLogout(showWorkoutModal) {
 
     clearGarminSession();
     clearGarminToken();
+    clearMfaState();
     updateGarminStatus('已登出', false);
 
     setTimeout(() => {
@@ -291,7 +342,7 @@ export async function importAllToGarmin(dayIndex, trainingData, convertToGarminW
     }
 }
 
-// Direct import to Garmin (login + import in one request)
+// Direct import to Garmin (login + import in one request) - supports MFA
 export async function directImportToGarmin(dayIndex, trainingData, convertToGarminWorkout, showWorkoutModal) {
     const email = document.getElementById('garminEmail')?.value;
     const password = document.getElementById('garminPassword')?.value;
@@ -349,6 +400,16 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
 
         const data = await response.json();
 
+        // MFA required - save session in memory and show OTP input
+        if (data.needsMfa) {
+            pendingMfaSession = data.mfaSession;
+            pendingWorkouts = workoutPayloads;
+            pendingDayIndex = dayIndex;
+            updateGarminStatus('📱 請輸入 Garmin 傳送的驗證碼', false);
+            showMfaInput();
+            return;
+        }
+
         // 保存 token 和 user（如果有的話）
         if (data.oauth2Token) {
             setGarminToken(data.oauth2Token);
@@ -360,6 +421,7 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
         if (data.success) {
             // Save credentials for quick re-login
             setGarminCredentials(email, password);
+            clearMfaState();
             updateGarminStatus('✅ ' + (data.message || '匯入成功！'), false);
             setTimeout(() => {
                 const currentIndex = window.currentWorkoutDayIndex;
@@ -380,7 +442,6 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
             }
             updateGarminStatus(errorMsg, true);
 
-            // 刷新 modal 以顯示已登錄狀態
             setTimeout(() => {
                 const currentIndex = window.currentWorkoutDayIndex;
                 if (currentIndex !== undefined && showWorkoutModal) {
@@ -393,7 +454,89 @@ export async function directImportToGarmin(dayIndex, trainingData, convertToGarm
     }
 }
 
-// Import using stored credentials (direct to /api/garmin/import)
+// Submit MFA verification code (Step 2)
+export async function submitMfaCode(showWorkoutModal) {
+    const mfaCode = document.getElementById('garminMfaCode')?.value?.trim();
+
+    if (!mfaCode) {
+        updateGarminStatus('請輸入驗證碼', true);
+        return;
+    }
+
+    if (!pendingMfaSession) {
+        updateGarminStatus('MFA session 已過期，請重新登入', true);
+        hideMfaInput();
+        clearMfaState();
+        return;
+    }
+
+    updateGarminStatus('驗證中...', false);
+
+    try {
+        const response = await fetch('/api/garmin/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                mfaSession: pendingMfaSession,
+                mfaCode: mfaCode,
+                workouts: pendingWorkouts
+            })
+        });
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Non-JSON response:', text.substring(0, 200));
+            updateGarminStatus(`伺服器錯誤 (${response.status})，請稍後再試`, true);
+            // Keep mfaSession for retry
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Save credentials and clear MFA state
+            const email = document.getElementById('garminEmail')?.value;
+            const password = document.getElementById('garminPassword')?.value;
+            if (email && password) {
+                setGarminCredentials(email, password);
+            }
+            if (data.oauth2Token) setGarminToken(data.oauth2Token);
+            if (data.user) setGarminUser(data.user);
+
+            clearMfaState();
+            hideMfaInput();
+            updateGarminStatus('✅ ' + (data.message || '匯入成功！'), false);
+
+            setTimeout(() => {
+                const currentIndex = window.currentWorkoutDayIndex;
+                if (currentIndex !== undefined && showWorkoutModal) {
+                    showWorkoutModal(currentIndex, window.currentWorkoutOverrideDate);
+                }
+            }, 1500);
+        } else {
+            if (data.sessionExpired) {
+                // Session expired or invalid - must restart login
+                clearMfaState();
+                hideMfaInput();
+                updateGarminStatus(data.error || 'Session 過期，請重新登入', true);
+            } else {
+                // Recoverable error (wrong code) - keep mfaSession, clear input for retry
+                const otpInput = document.getElementById('garminMfaCode');
+                if (otpInput) {
+                    otpInput.value = '';
+                    otpInput.focus();
+                }
+                updateGarminStatus(data.error || '驗證碼錯誤，請重新輸入', true);
+            }
+        }
+    } catch (error) {
+        // Network error - keep mfaSession for retry
+        updateGarminStatus(`連線錯誤：${error.message}，請重試`, true);
+    }
+}
+
+// Import using stored credentials (direct to /api/garmin/import) - supports MFA
 export async function importWithCredentials(dayIndex, trainingData, convertToGarminWorkout, clearLoginAndShowForm, showWorkoutModal) {
     const creds = getGarminCredentials();
     if (!creds || !creds.email || !creds.password) {
@@ -451,6 +594,23 @@ export async function importWithCredentials(dayIndex, trainingData, convertToGar
 
         const data = await response.json();
 
+        // MFA required
+        if (data.needsMfa) {
+            pendingMfaSession = data.mfaSession;
+            pendingWorkouts = workoutPayloads;
+            pendingDayIndex = dayIndex;
+            updateGarminStatus('📱 請輸入 Garmin 傳送的驗證碼', false);
+
+            // Need to re-render modal to show MFA form
+            if (showWorkoutModal) {
+                const currentIndex = window.currentWorkoutDayIndex;
+                if (currentIndex !== undefined) {
+                    showWorkoutModal(currentIndex, window.currentWorkoutOverrideDate);
+                }
+            }
+            return;
+        }
+
         // Update token and user if returned
         if (data.oauth2Token) {
             setGarminToken(data.oauth2Token);
@@ -460,6 +620,7 @@ export async function importWithCredentials(dayIndex, trainingData, convertToGar
         }
 
         if (data.success) {
+            clearMfaState();
             updateGarminStatus('✅ ' + (data.message || '匯入成功！'), false);
             setTimeout(() => {
                 const currentIndex = window.currentWorkoutDayIndex;
@@ -486,6 +647,7 @@ export function clearLoginAndShowForm(showWorkoutModal) {
     clearGarminSession();
     clearGarminUser();
     clearGarminCredentials();
+    clearMfaState();
 
     const currentIndex = window.currentWorkoutDayIndex;
     if (currentIndex !== undefined && showWorkoutModal) {

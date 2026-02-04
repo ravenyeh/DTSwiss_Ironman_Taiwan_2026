@@ -1,4 +1,4 @@
-const { GarminConnect } = require('@gooin/garmin-connect');
+const { GarminConnect } = require('garmin-connect');
 
 // Store sessions in memory (for demo - in production use Redis/DB)
 const sessions = new Map();
@@ -18,25 +18,94 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const { email, password } = req.body;
+        const { email, password, mfaSession, mfaCode } = req.body;
 
+        // Step 2: MFA verification
+        if (mfaSession && mfaCode) {
+            const GC = new GarminConnect({ username: '', password: '' });
+
+            try {
+                await GC.verifyMFA(mfaSession, mfaCode);
+            } catch (e) {
+                const msg = e.message.toLowerCase();
+                let errorMessage = 'MFA 驗證失敗';
+                let sessionExpired = false;
+
+                if (msg.includes('expired')) {
+                    errorMessage = '驗證碼已過期（5 分鐘），請重新登入';
+                    sessionExpired = true;
+                } else if (msg.includes('invalid') && msg.includes('session')) {
+                    errorMessage = 'Session 無效，請重新登入';
+                    sessionExpired = true;
+                } else if (msg.includes('mfa_secret_key')) {
+                    errorMessage = '伺服器 MFA 設定錯誤';
+                    sessionExpired = true;
+                } else if (msg.includes('code') || msg.includes('invalid')) {
+                    errorMessage = '驗證碼錯誤，請重新輸入';
+                }
+
+                return res.status(401).json({
+                    success: false,
+                    error: errorMessage,
+                    sessionExpired: sessionExpired
+                });
+            }
+
+            // MFA verified, create session
+            const sessionId = `gc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            sessions.set(sessionId, { gc: GC, createdAt: Date.now() });
+
+            // Get user profile
+            let user = null;
+            let oauth2Token = GC.client?.oauth2Token || null;
+            try {
+                const userProfile = await GC.getUserProfile();
+                let socialProfile = null;
+                if (userProfile.displayName) {
+                    try {
+                        const socialUrl = `https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile/${userProfile.displayName}`;
+                        socialProfile = await GC.get(socialUrl);
+                    } catch (e) {}
+                }
+                user = {
+                    displayName: userProfile.displayName || 'User',
+                    fullName: socialProfile?.fullName || socialProfile?.userProfileFullName || userProfile.fullName || null,
+                    profileImageUrl: socialProfile?.profileImageUrlSmall || userProfile.profileImageUrlSmall || null
+                };
+            } catch (e) {}
+
+            return res.status(200).json({
+                success: true,
+                sessionId: sessionId,
+                user: user,
+                oauth2Token: oauth2Token
+            });
+        }
+
+        // Step 1: Login with credentials
         if (!email || !password) {
             return res.status(400).json({ error: '請提供 Email 和密碼' });
         }
 
-        // Initialize with credentials (required for @gooin/garmin-connect)
         const GC = new GarminConnect({
             username: email,
             password: password
         });
 
-        // Login to Garmin Connect
-        await GC.login();
+        const loginResult = await GC.login();
 
-        // Generate session ID
+        // Check if MFA is required
+        if (loginResult && loginResult.needsMFA) {
+            return res.status(200).json({
+                success: false,
+                needsMfa: true,
+                mfaSession: loginResult.mfaSession,
+                message: '請輸入 Garmin 傳送的驗證碼'
+            });
+        }
+
+        // No MFA needed
         const sessionId = `gc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-        // Store the GarminConnect instance
         sessions.set(sessionId, {
             gc: GC,
             email: email,
@@ -54,21 +123,16 @@ module.exports = async (req, res) => {
         // Get user profile
         const userProfile = await GC.getUserProfile();
 
-        // Try to fetch social profile for fullName and avatar
         let socialProfile = null;
         if (userProfile.displayName) {
             try {
                 const socialUrl = `https://connect.garmin.com/modern/proxy/userprofile-service/socialProfile/${userProfile.displayName}`;
                 socialProfile = await GC.get(socialUrl);
-            } catch (e) {
-                // Social profile fetch is optional, continue without it
-            }
+            } catch (e) {}
         }
 
-        // Get OAuth2 token for client-side storage
         const oauth2Token = GC.client?.oauth2Token || null;
 
-        // Build user object - prefer social profile data if available
         const user = {
             displayName: userProfile.displayName || email.split('@')[0],
             fullName: socialProfile?.fullName || socialProfile?.userProfileFullName || userProfile.fullName || null,
@@ -84,7 +148,6 @@ module.exports = async (req, res) => {
 
     } catch (error) {
         console.error('Garmin login error:', error.message);
-        console.error('Full error:', JSON.stringify(error, null, 2));
 
         let errorMessage = '登入失敗';
         let errorDetail = '';

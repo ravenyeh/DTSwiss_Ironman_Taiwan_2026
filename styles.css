@@ -3226,6 +3226,49 @@ body {
     gap: 12px;
 }
 
+.garmin-mfa-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mfa-hint {
+    margin: 0;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.5;
+}
+
+.mfa-input-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.mfa-code-input {
+    flex: 1;
+    font-size: 1.2rem;
+    letter-spacing: 4px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.btn-mfa-cancel {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-mfa-cancel:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.9);
+}
+
 .garmin-input {
     padding: 12px 15px;
     border: none;

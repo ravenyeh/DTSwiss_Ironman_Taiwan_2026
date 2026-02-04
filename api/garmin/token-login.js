@@ -1,4 +1,4 @@
-const { GarminConnect } = require('@gooin/garmin-connect');
+const { GarminConnect } = require('garmin-connect');
 const { sessions } = require('./login');
 
 module.exports = async (req, res) => {

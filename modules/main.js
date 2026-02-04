@@ -6,11 +6,12 @@ import { TRAINING_PARAMS, POWER_ZONES, RUN_PACE_ZONES, SWIM_PACE_ZONES } from '.
 import { saveUserSettings, toggleSettingsPanel, updateSettingsDisplay } from './settings.js';
 import { formatDate, formatPace, toEnglishFilename, escapeXml } from './utils.js';
 import {
-    hasValidLogin, getGarminUser,
+    hasValidLogin, getGarminUser, hasPendingMfa,
     garminLogin, garminLogout,
     directImportToGarmin as _directImportToGarmin,
     importWithCredentials as _importWithCredentials,
-    clearLoginAndShowForm as _clearLoginAndShowForm
+    clearLoginAndShowForm as _clearLoginAndShowForm,
+    submitMfaCode as _submitMfaCode
 } from './garminConnect.js';
 import { convertToGarminWorkout } from './workoutBuilder.js';
 import {
@@ -148,13 +149,14 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
 
     const isLoggedIn = hasValidLogin();
     const storedUser = getGarminUser();
+    const isMfaPending = hasPendingMfa();
 
     html += `
             <div class="garmin-section">
                 <h4>匯入 Garmin Connect</h4>
                 ${workouts.length > 0 ? `
                     <div id="garminLoginSection">
-                        ${isLoggedIn ? `
+                        ${isLoggedIn && !isMfaPending ? `
                             <div class="garmin-token-status">
                                 <div class="garmin-user-info" id="garminUserInfo">
                                     ${storedUser?.profileImageUrl ? `<img src="${storedUser.profileImageUrl}" alt="Profile" class="garmin-user-avatar">` : '<div class="garmin-user-avatar-placeholder">👤</div>'}
@@ -164,15 +166,23 @@ function showWorkoutModal(dayIndex, overrideDate = null) {
                                 <button class="btn-garmin-logout-small" onclick="clearLoginAndShowForm()">登出</button>
                             </div>
                         ` : `
-                            <div class="garmin-login-form" id="garminLoginForm">
+                            <div class="garmin-login-form" id="garminLoginForm" style="${isMfaPending ? 'display:none' : ''}">
                                 <input type="email" id="garminEmail" placeholder="Garmin Email" class="garmin-input">
                                 <input type="password" id="garminPassword" placeholder="密碼" class="garmin-input">
                                 <button class="btn-garmin-import" onclick="directImportToGarmin(${dayIndex})">登入並匯入訓練</button>
                             </div>
+                            <div class="garmin-mfa-form" id="garminMfaForm" style="${isMfaPending ? '' : 'display:none'}">
+                                <p class="mfa-hint">📱 Garmin 已傳送驗證碼到你的信箱或手機</p>
+                                <div class="mfa-input-row">
+                                    <input type="text" id="garminMfaCode" placeholder="輸入驗證碼" class="garmin-input mfa-code-input" maxlength="7" autocomplete="one-time-code" inputmode="numeric">
+                                    <button class="btn-garmin-import" onclick="submitMfaCode()">驗證</button>
+                                </div>
+                                <button class="btn-mfa-cancel" onclick="cancelMfa()">取消，重新登入</button>
+                            </div>
                         `}
                     </div>
                 ` : ''}
-                <div id="garminStatus" class="garmin-status"></div>
+                <div id="garminStatus" class="garmin-status">${isMfaPending ? '📱 請輸入 Garmin 傳送的驗證碼' : ''}</div>
             </div>
             <div class="modal-footer">
                 <button class="btn-close" onclick="closeWorkoutModal()">關閉</button>
@@ -658,3 +668,7 @@ window.importWithCredentials = (dayIndex) => {
 };
 
 window.clearLoginAndShowForm = () => _clearLoginAndShowForm(showWorkoutModal);
+
+window.submitMfaCode = () => _submitMfaCode(showWorkoutModal);
+
+window.cancelMfa = () => _clearLoginAndShowForm(showWorkoutModal);

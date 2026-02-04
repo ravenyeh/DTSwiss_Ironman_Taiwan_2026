@@ -159,14 +159,14 @@ async function importWorkouts(GC, workouts, res) {
                         );
                         scheduled = true;
                     } else {
-                        // Fallback: direct API call for scheduling
-                        const scheduleUrl = `https://connect.garmin.com/workout-service/schedule/${createdWorkout.workoutId}`;
-                        const dateStr = scheduledDate; // already YYYY-MM-DD
-                        if (GC.client && GC.client.put) {
-                            await GC.client.put(scheduleUrl, { date: dateStr });
+                        // Fallback: direct POST to Garmin schedule API
+                        const scheduleUrl = `https://connect.garmin.com/modern/proxy/workout-service/schedule/${createdWorkout.workoutId}`;
+                        const body = { date: scheduledDate };
+                        if (typeof GC.post === 'function') {
+                            await GC.post(scheduleUrl, body);
                             scheduled = true;
-                        } else if (GC.put) {
-                            await GC.put(scheduleUrl, { date: dateStr });
+                        } else if (GC.client && GC.client.post) {
+                            await GC.client.post(scheduleUrl, body);
                             scheduled = true;
                         }
                     }

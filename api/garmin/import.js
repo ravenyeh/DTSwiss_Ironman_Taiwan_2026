@@ -160,8 +160,7 @@ async function importWorkouts(GC, workouts, res) {
                         scheduled = true;
                     } else {
                         // Fallback: direct POST to Garmin schedule API
-                        // ravenyeh/garmin-connect uses connectapi.garmin.com
-                        const scheduleUrl = `https://connectapi.garmin.com/workout-service/schedule/${createdWorkout.workoutId}`;
+                        const scheduleUrl = `https://connect.garmin.com/modern/proxy/workout-service/schedule/${createdWorkout.workoutId}`;
                         const body = { date: scheduledDate };
                         if (typeof GC.post === 'function') {
                             await GC.post(scheduleUrl, body);

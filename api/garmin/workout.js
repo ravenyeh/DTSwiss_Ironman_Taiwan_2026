@@ -79,13 +79,27 @@ module.exports = async (req, res) => {
         let scheduleError = null;
         if (scheduledDate && createdWorkout && createdWorkout.workoutId) {
             try {
-                // Correct format: first param is object with workoutId, second is Date object
-                await GC.scheduleWorkout(
-                    { workoutId: createdWorkout.workoutId },
-                    new Date(scheduledDate)
-                );
-                scheduled = true;
-                console.log('Workout scheduled successfully:', createdWorkout.workoutId, 'to', scheduledDate);
+                if (typeof GC.scheduleWorkout === 'function') {
+                    await GC.scheduleWorkout(
+                        { workoutId: createdWorkout.workoutId },
+                        new Date(scheduledDate)
+                    );
+                    scheduled = true;
+                } else {
+                    // Fallback: direct API call for scheduling
+                    const scheduleUrl = `https://connect.garmin.com/workout-service/schedule/${createdWorkout.workoutId}`;
+                    const dateStr = scheduledDate; // already YYYY-MM-DD
+                    if (GC.client && GC.client.put) {
+                        await GC.client.put(scheduleUrl, { date: dateStr });
+                        scheduled = true;
+                    } else if (GC.put) {
+                        await GC.put(scheduleUrl, { date: dateStr });
+                        scheduled = true;
+                    }
+                }
+                if (scheduled) {
+                    console.log('Workout scheduled successfully:', createdWorkout.workoutId, 'to', scheduledDate);
+                }
             } catch (e) {
                 console.log('Schedule workout failed:', e.message);
                 scheduleError = e.message;

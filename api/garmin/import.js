@@ -158,6 +158,17 @@ async function importWorkouts(GC, workouts, res) {
                             new Date(scheduledDate)
                         );
                         scheduled = true;
+                    } else {
+                        // Fallback: direct API call for scheduling
+                        const scheduleUrl = `https://connect.garmin.com/workout-service/schedule/${createdWorkout.workoutId}`;
+                        const dateStr = scheduledDate; // already YYYY-MM-DD
+                        if (GC.client && GC.client.put) {
+                            await GC.client.put(scheduleUrl, { date: dateStr });
+                            scheduled = true;
+                        } else if (GC.put) {
+                            await GC.put(scheduleUrl, { date: dateStr });
+                            scheduled = true;
+                        }
                     }
                 } catch (e) {
                     console.log('Schedule failed:', e.message);

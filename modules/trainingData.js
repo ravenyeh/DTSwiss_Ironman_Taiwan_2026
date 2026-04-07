@@ -182,14 +182,14 @@ export const trainingData = [
     { day: "Week 12 - Day 6 (週六)", status: "No", intensity: "休息", date: "May 9, 2026", swim: "", bike: "", content: "完全休息日 - 強化期開始", hours: 0, type: "完全休息", run: "", week: "Week 12", phase: "強化期" },
     { day: "Week 12 - Day 7 (週日)", status: "No", intensity: "中等", date: "May 10, 2026", swim: "3", bike: "", content: "跑步：長跑 25km (前10km輕鬆 + 中段10km @ M配速 + 最後5km輕鬆) | 游泳：恢復游 3km", hours: 4.5, type: "配速訓練, 長距離", run: "25", week: "Week 12", phase: "強化期" },
 
-    // ============ Week 13 - 強化期 (February 16-22, 2026) - 農曆新年 ============
-    { day: "Week 13 - Day 1 (週一)", status: "No", intensity: "高強度", date: "May 11, 2026", swim: "", bike: "170", content: "🧧 初五 | 自行車：長距離 170km @ Z2 (每30分鐘補給) | 磚式訓練：接續跑 9km @ M配速", hours: 7.5, type: "磚式訓練, 長距離", run: "9", week: "Week 13", phase: "強化期", holiday: "除夕" },
-    { day: "Week 13 - Day 2 (週二)", status: "No", intensity: "中等", date: "May 12, 2026", swim: "3.5", bike: "", content: "🧧 初一 | 游泳：技術+配速 3.5km (1km技術 + 6x300m @ T配速) | 跑步：輕鬆跑 8km", hours: 2.5, type: "技術課, 配速訓練", run: "8", week: "Week 13", phase: "強化期", holiday: "初一" },
-    { day: "Week 13 - Day 3 (週三)", status: "No", intensity: "高強度", date: "May 13, 2026", swim: "", bike: "75", content: "🧧 初二 | 自行車：75km (含 4x15分鐘 @ Sweet Spot)", hours: 3, type: "配速訓練", run: "", week: "Week 13", phase: "強化期", holiday: "初二" },
-    { day: "Week 13 - Day 4 (週四)", status: "No", intensity: "高強度", date: "May 14, 2026", swim: "3", bike: "", content: "🧧 初三 | 游泳：間歇 3km (8x300m @ I配速, 休40秒) | 跑步：間歇 11km (熱身3km + 8x1km @ I配速 休90秒 + 緩和2km)", hours: 2.5, type: "間歇訓練", run: "11", week: "Week 13", phase: "強化期", holiday: "初三" },
-    { day: "Week 13 - Day 5 (週五)", status: "No", intensity: "輕鬆", date: "May 15, 2026", swim: "2", bike: "", content: "🧧 初四 | 游泳：恢復游 2km (輕鬆技術)", hours: 1, type: "輕鬆恢復", run: "", week: "Week 13", phase: "強化期", holiday: "初四" },
-    { day: "Week 13 - Day 6 (週六)", status: "No", intensity: "休息", date: "May 16, 2026", swim: "", bike: "", content: "🧧 除夕 | 完全休息日", hours: 0, type: "完全休息", run: "", week: "Week 13", phase: "強化期", holiday: "初五" },
-    { day: "Week 13 - Day 7 (週日)", status: "No", intensity: "中等", date: "May 17, 2026", swim: "3", bike: "", content: "🧧 初六 | 跑步：長跑 26km (前8km輕鬆 + 中段14km @ M配速 + 最後4km輕鬆) | 游泳：恢復游 3km", hours: 4.5, type: "配速訓練, 長距離", run: "26", week: "Week 13", phase: "強化期", holiday: "初六" },
+    // ============ Week 13 - 強化期 (February 16-22, 2026) ============
+    { day: "Week 13 - Day 1 (週一)", status: "No", intensity: "高強度", date: "May 11, 2026", swim: "", bike: "170", content: "自行車：長距離 170km @ Z2 (每30分鐘補給) | 磚式訓練：接續跑 9km @ M配速", hours: 7.5, type: "磚式訓練, 長距離", run: "9", week: "Week 13", phase: "強化期" },
+    { day: "Week 13 - Day 2 (週二)", status: "No", intensity: "中等", date: "May 12, 2026", swim: "3.5", bike: "", content: "游泳：技術+配速 3.5km (1km技術 + 6x300m @ T配速) | 跑步：輕鬆跑 8km", hours: 2.5, type: "技術課, 配速訓練", run: "8", week: "Week 13", phase: "強化期" },
+    { day: "Week 13 - Day 3 (週三)", status: "No", intensity: "高強度", date: "May 13, 2026", swim: "", bike: "75", content: "自行車：75km (含 4x15分鐘 @ Sweet Spot)", hours: 3, type: "配速訓練", run: "", week: "Week 13", phase: "強化期" },
+    { day: "Week 13 - Day 4 (週四)", status: "No", intensity: "高強度", date: "May 14, 2026", swim: "3", bike: "", content: "游泳：間歇 3km (8x300m @ I配速, 休40秒) | 跑步：間歇 11km (熱身3km + 8x1km @ I配速 休90秒 + 緩和2km)", hours: 2.5, type: "間歇訓練", run: "11", week: "Week 13", phase: "強化期" },
+    { day: "Week 13 - Day 5 (週五)", status: "No", intensity: "輕鬆", date: "May 15, 2026", swim: "2", bike: "", content: "游泳：恢復游 2km (輕鬆技術)", hours: 1, type: "輕鬆恢復", run: "", week: "Week 13", phase: "強化期" },
+    { day: "Week 13 - Day 6 (週六)", status: "No", intensity: "休息", date: "May 16, 2026", swim: "", bike: "", content: "完全休息日", hours: 0, type: "完全休息", run: "", week: "Week 13", phase: "強化期" },
+    { day: "Week 13 - Day 7 (週日)", status: "No", intensity: "中等", date: "May 17, 2026", swim: "3", bike: "", content: "跑步：長跑 26km (前8km輕鬆 + 中段14km @ M配速 + 最後4km輕鬆) | 游泳：恢復游 3km", hours: 4.5, type: "配速訓練, 長距離", run: "26", week: "Week 13", phase: "強化期" },
 
     // ============ Week 14 - 強化期 (May 18-24, 2026) ============
     { day: "Week 14 - Day 1 (週一)", status: "No", intensity: "最大", date: "May 18, 2026", swim: "", bike: "180", content: "自行車：長距離 180km @ Z2 (側風訓練) | 磚式訓練：接續跑 10km @ M配速", hours: 8, type: "磚式訓練, 長距離", run: "10", week: "Week 14", phase: "強化期" },

@@ -3514,3 +3514,28 @@ body {
         font-size: 1rem;
     }
 }
+
+/* Past schedule toggle */
+.past-toggle-row td.past-toggle-cell {
+    padding: 0;
+    background: #f5f5f5;
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+}
+.past-toggle-btn {
+    width: 100%;
+    padding: 10px 15px;
+    background: transparent;
+    border: none;
+    text-align: left;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+}
+.past-toggle-btn:hover {
+    background: #ececec;
+}
+tr.past-row {
+    opacity: 0.6;
+}

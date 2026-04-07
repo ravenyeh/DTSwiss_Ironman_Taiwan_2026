@@ -347,12 +347,10 @@ function formatStepTarget(step, sportType) {
 // ============================================
 
 const RACES = {
-    puyuma: { name: '2026 普悠瑪鐵人三項', date: 'March 28, 2026' },
-    ironman: { name: '2026 IRONMAN 澎湖', date: 'April 12, 2026' },
-    challenge: { name: '2026 Challenge Taiwan', date: 'April 25, 2026' }
+    roth: { name: '2026 Challenge Roth', date: 'July 5, 2026' }
 };
 
-const DEFAULT_RACE_KEY = 'ironman';
+const DEFAULT_RACE_KEY = 'roth';
 
 function getRaceSettings() {
     const saved = localStorage.getItem('raceSettings');

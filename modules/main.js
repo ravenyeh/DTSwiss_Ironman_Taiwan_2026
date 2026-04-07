@@ -48,13 +48,38 @@ function populateSchedule(filter = 'all') {
         ? trainingData
         : trainingData.filter(item => item.phase === filter);
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const pastCount = filteredData.filter(item => new Date(item.date) < today).length;
+    const pastExpanded = window.__pastExpanded === true;
+    let toggleInserted = false;
+
     filteredData.forEach(item => {
+        const itemDate = new Date(item.date);
+        const isPast = itemDate < today;
+
+        if (isPast && !toggleInserted && pastCount > 0) {
+            const toggleRow = document.createElement('tr');
+            toggleRow.className = 'past-toggle-row';
+            toggleRow.innerHTML = `<td colspan="10" class="past-toggle-cell">
+                <button class="past-toggle-btn" onclick="togglePastSchedule()">
+                    ${pastExpanded ? '▼' : '▶'} 已過去的訓練日 (${pastCount} 天)
+                </button>
+            </td>`;
+            tbody.appendChild(toggleRow);
+            toggleInserted = true;
+        }
+
         const row = document.createElement('tr');
         const originalIndex = trainingData.findIndex(d => d.date === item.date);
 
         if (item.intensity === '休息') row.classList.add('rest-day');
         if (item.type === '比賽日') row.classList.add('race-day');
         if (item.holiday) row.classList.add('holiday-row');
+        if (isPast) {
+            row.classList.add('past-row');
+            if (!pastExpanded) row.style.display = 'none';
+        }
 
         const hasWorkout = item.swim || item.bike || item.run;
 
@@ -76,6 +101,13 @@ function populateSchedule(filter = 'all') {
 }
 
 window.populateSchedule = populateSchedule;
+
+// Toggle past schedule rows visibility
+window.togglePastSchedule = function () {
+    window.__pastExpanded = !window.__pastExpanded;
+    const activeFilter = document.querySelector('.filter-btn.active');
+    populateSchedule(activeFilter ? activeFilter.dataset.filter : 'all');
+};
 
 // Show workout modal
 function showWorkoutModal(dayIndex, overrideDate = null) {
